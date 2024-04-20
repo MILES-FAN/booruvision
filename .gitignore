@@ -168,3 +168,5 @@ test/*
 *.bat
 
 tempCodeRunnerFile.py
+
+config.ini

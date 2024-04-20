@@ -8,6 +8,8 @@ from PyQt5.QtWidgets import QFileDialog
 from typing import Callable, Optional
 from pyqtkeybind import keybinder
 from requests import get
+import configparser
+import os
 
 def QImage_to_PIL(qimage):
     qimage = qimage.convertToFormat(QImage.Format.Format_RGB32)
@@ -49,14 +51,16 @@ class QtKeyBinder:
         keybinder.unregister_hotkey(self.win_id, hotkey)
 
 class TagDisplay(QWidget):
-    def __init__(self, tags):
+    def __init__(self, tags, parent=None):
         super().__init__()
 
         self.setWindowTitle("Image Tags")
         self.setGeometry(100, 100, self.calc_size(400, 600)[0], self.calc_size(400, 600)[1])
         self.tags = tags
         self.formated_tags = tags
-        self.tag_format = "booru"
+        self.parent = parent
+        self.parent.readConfig()
+        self.tag_format = self.parent.tag_format
         self.initUI(tags)
     
     def get_scale(self):
@@ -96,7 +100,12 @@ class TagDisplay(QWidget):
         self.formatDropdown = QComboBox()
         self.formatDropdown.addItem("Booru")
         self.formatDropdown.addItem("Stable Diffusion")
+        for i in range(self.formatDropdown.count()):
+            if self.formatDropdown.itemText(i) == self.tag_format:
+                self.formatDropdown.setCurrentIndex(i)
+                break
         self.formatDropdown.currentIndexChanged.connect(self.changeTagFormat)
+        self.changeTagFormat()
         layout.addWidget(self.formatDropdown)
 
         self.setLayout(layout)
@@ -114,6 +123,8 @@ class TagDisplay(QWidget):
                 tag = tag.replace("_", " ").replace("(", r"\(").replace(")", r"\)")
                 formatted_tags[tag] = confidence
             self.formated_tags = formatted_tags
+        
+        self.parent.saveConfig()
 
     def copyToClipboard(self):
         clipboard = QApplication.clipboard()
@@ -132,11 +143,38 @@ class ImageInterrogator(QMainWindow):
         self.setGeometry(100, 100, self.calc_size(800, 600)[0], self.calc_size(800, 600)[1])
         self.tagger = wd_tagger()
         self.tagDisplay = None
+        self.tag_format = "booru"
         self.currentKeybind = "Ctrl+Shift+I"
+        self.readConfig()
         self.keybinder = QtKeyBinder(self.winId())
         self.keybinder.register_hotkey(self.currentKeybind, self.fastAnalyzeImageFromClipboard)
         self.initUI()
     
+    def saveConfig(self):
+        config = configparser.ConfigParser()
+        config["GUI"] = {
+            "shortcut": self.currentKeybind,
+            "unload_model_when_done": self.tagger.unloadAfterAnalysis,
+            "tag_format": self.tag_format
+        }
+        if self.tagDisplay:
+            config["GUI"]["tag_format"] = self.tagDisplay.tag_format
+        with open("config.ini", "w") as configfile:
+            config.write(configfile)
+
+    def readConfig(self):
+        try:
+            if not os.path.exists("config.ini"):
+                self.saveConfig()
+            config = configparser.ConfigParser()
+            config.read("config.ini")
+            self.currentKeybind = config["GUI"]["shortcut"]
+            self.tagger.unloadAfterAnalysis = config["GUI"].getboolean("unload_model_when_done")
+            self.tag_format = config["GUI"]["tag_format"]
+        except Exception as e:
+            print("Error reading config file")
+            self.saveConfig()
+
     def get_scale(self):
         ref_width = 1920
         ref_height = 1080
@@ -177,13 +215,24 @@ class ImageInterrogator(QMainWindow):
 
         # Checkbox for unload model after every analysis
         self.unloadModelCheckbox = QCheckBox("Unload model after every analysis")
+        self.unloadModelCheckbox.setChecked(self.tagger.unloadAfterAnalysis)
         self.unloadModelCheckbox.stateChanged.connect(self.unloadModel)
+        self.unloadModel()
 
         # Dropdown for selecting shortcut combination
         self.shortcutDropdown = QComboBox()
         self.shortcutDropdown.addItem("Ctrl+Shift+I")
         self.shortcutDropdown.addItem("Ctrl+Shift+J")
         self.shortcutDropdown.addItem("Ctrl+Shift+K")
+        currentKeybindInList = False
+        for i in range(self.shortcutDropdown.count()):
+            if self.shortcutDropdown.itemText(i) == self.currentKeybind:
+                self.shortcutDropdown.setCurrentIndex(i)
+                currentKeybindInList = True
+                break
+        if not currentKeybindInList:
+            self.shortcutDropdown.addItem(self.currentKeybind)
+            self.shortcutDropdown.setCurrentIndex(self.shortcutDropdown.count() - 1)
         self.shortcutDropdown.currentIndexChanged.connect(self.changeShortcut)
 
         # Add widgets to layout
@@ -210,6 +259,7 @@ class ImageInterrogator(QMainWindow):
             self.shortcutDropdown.setCurrentText(oldKeybind)
             self.keybinder.register_hotkey(self.currentKeybind, self.fastAnalyzeImageFromClipboard)
             print("Error changing shortcut keybind")
+        self.saveConfig()
 
     def fastAnalyzeImageFromClipboard(self):
         if self.tagDisplay:
@@ -242,14 +292,16 @@ class ImageInterrogator(QMainWindow):
             self.imageLabel.setText("Error loading image!")
 
     def displayResults(self, tags):
-        self.tagDisplay = TagDisplay(tags)
+        self.tagDisplay = TagDisplay(tags, self)
         self.tagDisplay.show()
 
     def unloadModel(self):
         if self.unloadModelCheckbox.isChecked():
             self.tagger.unloadAfterAnalysis = True
+            self.saveConfig()
         else:
             self.tagger.unloadAfterAnalysis = False
+            self.saveConfig()
 
     def analyzeImage(self):
         # Placeholder for image analysis logic
