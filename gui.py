@@ -11,6 +11,8 @@ from requests import get
 
 def QImage_to_PIL(qimage):
     qimage = qimage.convertToFormat(QImage.Format.Format_RGB32)
+    # swap R and B channels
+    qimage = qimage.rgbSwapped()
     data = qimage.bits().asstring(qimage.byteCount())
     pilimage = Image.frombuffer("RGBA", (qimage.width(), qimage.height()), data, 'raw', "RGBA", 0, 1)
     return pilimage

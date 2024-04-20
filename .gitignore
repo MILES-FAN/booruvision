@@ -166,3 +166,5 @@ add_env.py
 test/*
 
 *.bat
+
+tempCodeRunnerFile.py
