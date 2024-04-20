@@ -1,9 +1,9 @@
 deepdanbooru
+onnxruntime
 jsonschema
 fastapi
-gradio
-huggingface_hub
 numpy
+huggingface_hub
 opencv_contrib_python
 opencv_python
 opencv_python_headless
@@ -12,3 +12,5 @@ pandas
 Pillow
 tensorflow
 tqdm
+PyQt5
+pyqtkeybind
