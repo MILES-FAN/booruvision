@@ -6,7 +6,16 @@ A GUI for tagging image from your clipboard or file system using wd tagger
 
 ```bash
 python3 -m venv venv
+```
+
+for windows
+```bash
 ./venv/scripts/activate
+```
+
+for macos and linux
+```bash
+source venv/bin/activate
 ```
 
 2. Install the requirements
