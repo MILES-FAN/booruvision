@@ -6,10 +6,15 @@ from PyQt5.QtCore import Qt, QAbstractNativeEventFilter, QAbstractEventDispatche
 from wd_tagger import wd_tagger
 from PyQt5.QtWidgets import QFileDialog
 from typing import Callable, Optional
-from pyqtkeybind import keybinder
 from requests import get
 import configparser
 import os
+import platform
+
+keybindEnabled = False
+if platform.system() != "Darwin":
+    from pyqtkeybind import keybinder
+    keybindEnabled = True
 
 def QImage_to_PIL(qimage):
     qimage = qimage.convertToFormat(QImage.Format.Format_RGB32)
@@ -39,16 +44,19 @@ class EventDispatcher:
 
 class QtKeyBinder:
     def __init__(self, win_id: Optional[int]) -> None:
-        keybinder.init()
-        self.win_id = win_id
+        if keybindEnabled:
+            keybinder.init()
+            self.win_id = win_id
 
-        self.event_dispatcher = EventDispatcher(keybinder=keybinder)
+            self.event_dispatcher = EventDispatcher(keybinder=keybinder)
 
     def register_hotkey(self, hotkey: str, callback: Callable) -> None:
-        keybinder.register_hotkey(self.win_id, hotkey, callback)
+        if keybindEnabled:
+            keybinder.register_hotkey(self.win_id, hotkey, callback)
 
     def unregister_hotkey(self, hotkey: str) -> None:
-        keybinder.unregister_hotkey(self.win_id, hotkey)
+        if keybindEnabled:
+            keybinder.unregister_hotkey(self.win_id, hotkey)
 
 class TagDisplay(QWidget):
     def __init__(self, tags, parent=None):
