@@ -170,3 +170,5 @@ test/*
 tempCodeRunnerFile.py
 
 config.ini
+
+.DS_Store

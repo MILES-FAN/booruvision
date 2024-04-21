@@ -15,6 +15,8 @@ keybindEnabled = False
 if platform.system() != "Darwin":
     from pyqtkeybind import keybinder
     keybindEnabled = True
+else:
+    from pynput import keyboard
 
 def QImage_to_PIL(qimage):
     qimage = qimage.convertToFormat(QImage.Format.Format_RGB32)
@@ -49,10 +51,20 @@ class QtKeyBinder:
             self.win_id = win_id
 
             self.event_dispatcher = EventDispatcher(keybinder=keybinder)
+        else:
+            self.win_id = None
+            self.hotkey = None
+
+    def parse_hotkey(self, hotkey: str):
+        pass
+            
 
     def register_hotkey(self, hotkey: str, callback: Callable) -> None:
         if keybindEnabled:
             keybinder.register_hotkey(self.win_id, hotkey, callback)
+        else:
+            pass
+            
 
     def unregister_hotkey(self, hotkey: str) -> None:
         if keybindEnabled:

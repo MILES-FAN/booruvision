@@ -14,3 +14,4 @@ tensorflow
 tqdm
 PyQt5
 pyqtkeybind
+pynput
