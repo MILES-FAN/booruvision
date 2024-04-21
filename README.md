@@ -1,4 +1,4 @@
-A GUI for tagging image from your clipboard or file system using wd tagger
+A GUI tool for labeling image from your clipboard or file system using wd tagger
 ---
 ## How to install and run
 
@@ -42,8 +42,30 @@ Extra:
 - Check `Unload model after every analysis` can save you some memory, but it will take longer to analyze the image
 - You can choose tag format, currently support `Booru` and `Stable Diffusion` format
 
+## Configuration
+After the first run, a `config.ini` file will be created in the same directory as the script. You can change the configuration there.
+
+```ini
+[GUI]
+shortcut = Ctrl+Shift+I
+unload_model_when_done = False
+tag_format = booru
+
+[Tagger]
+model = wd-swinv2-v3
+threshold = 0.35
+```
+
+Default model is `wd-swinv2-v3` and I also recommend these models:
+- `wd-swinv2-v3` (default, with overall good performance)
+- `wd-convnext-v3` (might deal better with rotated images)
+- `wd-vit-v3` (good at character recognition)
+- `wd14-moat-v2` (Incase you want to use the old model)
+
+Default confidence threshold is `0.35`, lower it if you want more tags (less accurate).
+
 ## Known issues
-- Keybinding is not working on MacOS
+- Auto focus on the result window is not working on MacOS
 
 ## Copyright
 Original code by https://github.com/picobyte/stable-diffusion-webui-wd14-tagger

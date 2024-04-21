@@ -273,8 +273,10 @@ class ImageInterrogator(QMainWindow):
         self.showNormal()
         #bring the main window to the front
         self.activateWindow()
+        self.raise_()
         #focus on the tag display window
         self.tagDisplay.activateWindow()
+        self.tagDisplay.raise_()
 
     def loadImageFromClipboard(self):
         clipboard = QApplication.clipboard()
