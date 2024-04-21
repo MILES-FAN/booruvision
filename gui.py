@@ -2,7 +2,7 @@ from PIL import ImageGrab, Image
 import sys
 from PyQt5.QtWidgets import QApplication, QMainWindow, QPushButton, QLabel, QVBoxLayout, QWidget, QCheckBox, QComboBox, QTableWidget, QTableWidgetItem
 from PyQt5.QtGui import QCloseEvent, QPixmap, QClipboard, QImage
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, QTimer
 from wd_tagger import wd_tagger
 from PyQt5.QtWidgets import QFileDialog
 import configparser
@@ -120,13 +120,17 @@ class ImageInterrogator(QMainWindow):
         self.currentKeybind = "Ctrl+Shift+I"
         self.modelName = "wd-swinv2-v3"
         self.threshold = 0.35
+        self.taskQueue = []
+        self.taskTimer = QTimer()
+        self.taskTimer.timeout.connect(self.dealWithQueue)
+        self.taskTimer.setInterval(50)
+        self.taskTimer.start()
         self.readConfig()
         if platform_system != "Darwin":
             self.keybinder = QtKeyBinder(self.winId())
         else:
             self.keybinder = PynputKeyBinder()
-        #self.keybinder = PynputKeyBinder()
-        self.keybinder.register_hotkey(self.currentKeybind, self.fastAnalyzeImageFromClipboard)
+        self.keybinder.register_hotkey(self.currentKeybind, self.addFastAnalyzeToQueue)
         self.initUI()
     
     def saveConfig(self):
@@ -241,15 +245,26 @@ class ImageInterrogator(QMainWindow):
         try:
             self.keybinder.unregister_hotkey(self.currentKeybind)
             self.currentKeybind = self.shortcutDropdown.currentText()
-            self.keybinder.register_hotkey(self.currentKeybind, self.fastAnalyzeImageFromClipboard)
+            self.keybinder.register_hotkey(self.currentKeybind, self.addFastAnalyzeToQueue)
         except Exception as e:
             self.currentKeybind = oldKeybind
             self.shortcutDropdown.setCurrentText(oldKeybind)
-            self.keybinder.register_hotkey(self.currentKeybind, self.fastAnalyzeImageFromClipboard)
+            self.keybinder.register_hotkey(self.currentKeybind, self.addFastAnalyzeToQueue)
             print("Error changing shortcut keybind")
         self.saveConfig()
 
-    def fastAnalyzeImageFromClipboard(self, Optional=None):
+    def addFastAnalyzeToQueue(self, Optional=None):
+        self.taskQueue.append(self.fastAnalyzeImageFromClipboard)
+        if len(self.taskQueue) > 1:
+            return
+    
+    def dealWithQueue(self):
+        for task in self.taskQueue:
+            task()
+        self.taskQueue = []
+
+
+    def fastAnalyzeImageFromClipboard(self):
         if self.tagDisplay:
             self.tagDisplay.close()
         self.loadImageFromClipboard()

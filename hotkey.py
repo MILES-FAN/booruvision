@@ -61,15 +61,12 @@ class PynputKeyBinder(KeyBinderBase):
 
     def parse_hotkey(self, hotkey: str):
         return hotkey.replace("Ctrl", "<ctrl>").replace("Shift", "<shift>").replace("Alt", "<alt>").lower()
-    
-    def trigger_callback_in_main_thread(self):
-        self.callback()
 
     def register_hotkey(self, hotkey: str, callback: Callable) -> None:
         print(f"Registered hotkey: {hotkey}")
         self.callback = callback
         self.listener = keyboard.GlobalHotKeys({
-            self.parse_hotkey(hotkey): self.trigger_callback
+            self.parse_hotkey(hotkey): callback
         })
         self.listener.start()
 
