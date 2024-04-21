@@ -2,21 +2,15 @@ from PIL import ImageGrab, Image
 import sys
 from PyQt5.QtWidgets import QApplication, QMainWindow, QPushButton, QLabel, QVBoxLayout, QWidget, QCheckBox, QComboBox, QTableWidget, QTableWidgetItem
 from PyQt5.QtGui import QCloseEvent, QPixmap, QClipboard, QImage
-from PyQt5.QtCore import Qt, QAbstractNativeEventFilter, QAbstractEventDispatcher
+from PyQt5.QtCore import Qt
 from wd_tagger import wd_tagger
 from PyQt5.QtWidgets import QFileDialog
-from typing import Callable, Optional
-from requests import get
 import configparser
 import os
 import platform
+from hotkey import QtKeyBinder, PynputKeyBinder, KeyBinderBase
 
-keybindEnabled = False
-if platform.system() != "Darwin":
-    from pyqtkeybind import keybinder
-    keybindEnabled = True
-else:
-    from pynput import keyboard
+platform_system = platform.system()
 
 def QImage_to_PIL(qimage):
     qimage = qimage.convertToFormat(QImage.Format.Format_RGB32)
@@ -25,50 +19,6 @@ def QImage_to_PIL(qimage):
     data = qimage.bits().asstring(qimage.byteCount())
     pilimage = Image.frombuffer("RGBA", (qimage.width(), qimage.height()), data, 'raw', "RGBA", 0, 1)
     return pilimage
-
-class WinEventFilter(QAbstractNativeEventFilter):
-    def __init__(self, keybinder):
-        self.keybinder = keybinder
-        super().__init__()
-
-    def nativeEventFilter(self, eventType, message):
-        ret = self.keybinder.handler(eventType, message)
-        return ret, 0
-
-
-class EventDispatcher:
-    """Install a native event filter to receive events from the OS"""
-
-    def __init__(self, keybinder) -> None:
-        self.win_event_filter = WinEventFilter(keybinder)
-        self.event_dispatcher = QAbstractEventDispatcher.instance()
-        self.event_dispatcher.installNativeEventFilter(self.win_event_filter)
-
-class QtKeyBinder:
-    def __init__(self, win_id: Optional[int]) -> None:
-        if keybindEnabled:
-            keybinder.init()
-            self.win_id = win_id
-
-            self.event_dispatcher = EventDispatcher(keybinder=keybinder)
-        else:
-            self.win_id = None
-            self.hotkey = None
-
-    def parse_hotkey(self, hotkey: str):
-        pass
-            
-
-    def register_hotkey(self, hotkey: str, callback: Callable) -> None:
-        if keybindEnabled:
-            keybinder.register_hotkey(self.win_id, hotkey, callback)
-        else:
-            pass
-            
-
-    def unregister_hotkey(self, hotkey: str) -> None:
-        if keybindEnabled:
-            keybinder.unregister_hotkey(self.win_id, hotkey)
 
 class TagDisplay(QWidget):
     def __init__(self, tags, parent=None):
@@ -171,7 +121,11 @@ class ImageInterrogator(QMainWindow):
         self.modelName = "wd-swinv2-v3"
         self.threshold = 0.35
         self.readConfig()
-        self.keybinder = QtKeyBinder(self.winId())
+        if platform_system != "Darwin":
+            self.keybinder = QtKeyBinder(self.winId())
+        else:
+            self.keybinder = PynputKeyBinder()
+        #self.keybinder = PynputKeyBinder()
         self.keybinder.register_hotkey(self.currentKeybind, self.fastAnalyzeImageFromClipboard)
         self.initUI()
     
@@ -295,7 +249,7 @@ class ImageInterrogator(QMainWindow):
             print("Error changing shortcut keybind")
         self.saveConfig()
 
-    def fastAnalyzeImageFromClipboard(self):
+    def fastAnalyzeImageFromClipboard(self, Optional=None):
         if self.tagDisplay:
             self.tagDisplay.close()
         self.loadImageFromClipboard()
