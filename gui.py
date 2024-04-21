@@ -141,12 +141,15 @@ class ImageInterrogator(QMainWindow):
     def __init__(self):
         super().__init__()
 
-        self.setWindowTitle("Image Interrogator")
+        self.windowTittle = "Image Interrogator"
+        self.setWindowTitle(self.windowTittle)
         self.setGeometry(100, 100, self.calc_size(800, 600)[0], self.calc_size(800, 600)[1])
         self.tagger = wd_tagger()
         self.tagDisplay = None
         self.tag_format = "booru"
         self.currentKeybind = "Ctrl+Shift+I"
+        self.modelName = "wd-swinv2-v3"
+        self.threshold = 0.35
         self.readConfig()
         self.keybinder = QtKeyBinder(self.winId())
         self.keybinder.register_hotkey(self.currentKeybind, self.fastAnalyzeImageFromClipboard)
@@ -158,6 +161,10 @@ class ImageInterrogator(QMainWindow):
             "shortcut": self.currentKeybind,
             "unload_model_when_done": self.tagger.unloadAfterAnalysis,
             "tag_format": self.tag_format
+        }
+        config["Tagger"] = {
+            "model": self.modelName,
+            "threshold": self.threshold
         }
         if self.tagDisplay:
             config["GUI"]["tag_format"] = self.tagDisplay.tag_format
@@ -173,6 +180,9 @@ class ImageInterrogator(QMainWindow):
             self.currentKeybind = config["GUI"]["shortcut"]
             self.tagger.unloadAfterAnalysis = config["GUI"].getboolean("unload_model_when_done")
             self.tag_format = config["GUI"]["tag_format"]
+            self.modelName = config["Tagger"]["model"]
+            self.threshold = float(config["Tagger"]["threshold"])
+            self.tagger.set_threshold_and_model(self.threshold, self.modelName)
         except Exception as e:
             print("Error reading config file")
             self.saveConfig()
@@ -310,9 +320,11 @@ class ImageInterrogator(QMainWindow):
     def analyzeImage(self):
         # Placeholder for image analysis logic
         print("Analyze the image...")
+        self.setWindowTitle(f"{self.windowTittle} - Analyzing...")
         pilimage = QImage_to_PIL(self.imageLabel.pixmap().toImage())
         tags = self.tagger.tag_image_by_pil(pilimage)
         print(tags)
+        self.setWindowTitle(f"{self.windowTittle}")
         self.displayResults(tags)
         return tags
 

@@ -7,6 +7,7 @@ from tagger.interrogators import interrogators
 class wd_tagger:
     def image_interrogate(self,image, threshold, model):
         interrogator = interrogators[model]
+        print(f"Using model: {model}\n Threshold: {threshold}")
         im = image
         result = interrogator.interrogate(im)
         if(self.unloadAfterAnalysis):
@@ -18,6 +19,10 @@ class wd_tagger:
         self.threshold = threshold
         self.model = model
         self.unloadAfterAnalysis = False
+
+    def set_threshold_and_model(self, threshold, model):
+        self.threshold = threshold
+        self.model = model
 
     def tag_image_by_path(self, image_path):
         image = Image.open(image_path)
