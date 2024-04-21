@@ -1,5 +1,6 @@
 deepdanbooru
-onnxruntime
+onnxruntime; sys_platform != 'darwin' or platform_machine != 'arm64'
+onnxruntime-silicon; sys_platform == 'darwin' and platform_machine == 'arm64'
 jsonschema
 fastapi
 numpy
