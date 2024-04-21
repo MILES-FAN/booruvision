@@ -97,6 +97,7 @@ class TagDisplay(QWidget):
         copyToClipboardButton.clicked.connect(self.copyToClipboard)
         layout.addWidget(copyToClipboardButton)
 
+        self.formatLabel = QLabel("Tag format:")
         self.formatDropdown = QComboBox()
         self.formatDropdown.addItem("Booru")
         self.formatDropdown.addItem("Stable Diffusion")
@@ -106,6 +107,7 @@ class TagDisplay(QWidget):
                 break
         self.formatDropdown.currentIndexChanged.connect(self.changeTagFormat)
         self.changeTagFormat()
+        layout.addWidget(self.formatLabel)
         layout.addWidget(self.formatDropdown)
 
         self.setLayout(layout)
@@ -220,6 +222,7 @@ class ImageInterrogator(QMainWindow):
         self.unloadModel()
 
         # Dropdown for selecting shortcut combination
+        self.shortcutLabel = QLabel("Shortcut:")
         self.shortcutDropdown = QComboBox()
         self.shortcutDropdown.addItem("Ctrl+Shift+I")
         self.shortcutDropdown.addItem("Ctrl+Shift+J")
@@ -241,6 +244,7 @@ class ImageInterrogator(QMainWindow):
         layout.addWidget(self.loadImageButton)
         layout.addWidget(self.analyzeButton)
         layout.addWidget(self.unloadModelCheckbox)
+        layout.addWidget(self.shortcutLabel)
         layout.addWidget(self.shortcutDropdown)
 
         # Central widget
