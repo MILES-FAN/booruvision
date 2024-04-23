@@ -21,6 +21,11 @@ def QImage_to_PIL(qimage):
     pilimage = Image.frombuffer("RGBA", (qimage.width(), qimage.height()), data, 'raw', "RGBA", 0, 1)
     return pilimage
 
+def resource_path(relative):
+    if hasattr(sys, '_MEIPASS'):
+        return os.path.join(sys._MEIPASS, relative)
+    return os.path.join(os.path.abspath("."), relative)
+
 class TagDisplay(QWidget):
     def __init__(self, tags, parent=None):
         super().__init__()
@@ -110,7 +115,7 @@ class TagDisplay(QWidget):
 class ImageInterrogator(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.setWindowIcon(QIcon("icon.png"))
+        self.setWindowIcon(QIcon(resource_path("icon.ico")))
         self.windowTittle = "Image Interrogator"
         self.setWindowTitle(self.windowTittle)
         self.setGeometry(100, 100, self.calc_size(800, 600)[0], self.calc_size(800, 600)[1])

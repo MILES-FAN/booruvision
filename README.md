@@ -2,6 +2,16 @@ A GUI tool for labeling image from your clipboard or file system using wd tagger
 ---
 ## How to install and run
 
+### Use the pre-built executable
+
+1. Download the latest release from [here]
+2. Right click on the downloaded file and select `Run` or `Open`
+3. Wait for the application to start
+
+(Windows excutable gives false positive on some antivirus software, you can build the executable yourself if you don't trust the pre-built one)
+
+### Use the source code
+
 1. Create a virtual environment and activate it
 
 ```bash
@@ -29,6 +39,8 @@ pip install -r requirements.txt
 ```bash
 python gui.py
 ```
+
+It may take a while to initialize the application for the first time.
 
 ## How to use
 ![interface](imgs/interface.png)
