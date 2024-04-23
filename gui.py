@@ -8,6 +8,7 @@ from PyQt5.QtWidgets import QFileDialog
 import configparser
 import os
 import platform
+import time
 from hotkey import QtKeyBinder, PynputKeyBinder, KeyBinderBase
 
 platform_system = platform.system()
@@ -134,20 +135,25 @@ class ImageInterrogator(QMainWindow):
         self.initUI()
     
     def saveConfig(self):
-        config = configparser.ConfigParser()
-        config["GUI"] = {
-            "shortcut": self.currentKeybind,
-            "unload_model_when_done": self.tagger.unloadAfterAnalysis,
-            "tag_format": self.tag_format
-        }
-        config["Tagger"] = {
-            "model": self.modelName,
-            "threshold": self.threshold
-        }
-        if self.tagDisplay:
-            config["GUI"]["tag_format"] = self.tagDisplay.tag_format
-        with open("config.ini", "w") as configfile:
-            config.write(configfile)
+        print("Saving config...")
+        try:
+            config = configparser.ConfigParser()
+            config["GUI"] = {
+                "shortcut": self.currentKeybind,
+                "unload_model_when_done": self.tagger.unloadAfterAnalysis,
+                "tag_format": self.tag_format
+            }
+            config["Tagger"] = {
+                "model": self.modelName,
+                "threshold": self.threshold
+            }
+            if self.tagDisplay:
+                config["GUI"]["tag_format"] = self.tagDisplay.tag_format
+            with open("config.ini", "w") as configfile:
+                config.write(configfile)
+        except Exception as e:
+            print("Error saving config file")
+            raise e
 
     def readConfig(self):
         try:
@@ -247,10 +253,11 @@ class ImageInterrogator(QMainWindow):
             self.currentKeybind = self.shortcutDropdown.currentText()
             self.keybinder.register_hotkey(self.currentKeybind, self.addFastAnalyzeToQueue)
         except Exception as e:
+            print(f"Error changing shortcut keybind: {e}, tring to revert to old keybind")
             self.currentKeybind = oldKeybind
             self.shortcutDropdown.setCurrentText(oldKeybind)
             self.keybinder.register_hotkey(self.currentKeybind, self.addFastAnalyzeToQueue)
-            print("Error changing shortcut keybind")
+            print("Reverted to old keybind")
         self.saveConfig()
 
     def addFastAnalyzeToQueue(self, Optional=None):
@@ -320,8 +327,13 @@ class ImageInterrogator(QMainWindow):
         return tags
 
 if __name__ == "__main__":
-    app = QApplication(sys.argv)
-    window = ImageInterrogator()
-    window.show()
-    sys.exit(app.exec_())
+    try:
+        app = QApplication(sys.argv)
+        window = ImageInterrogator()
+        window.show()
+        sys.exit(app.exec_())
+    except Exception as e:
+        print(e)
+        with open(f"error_log_{time.time()}.txt", "a+") as f:
+            f.write(str(e))
 

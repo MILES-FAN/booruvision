@@ -73,5 +73,6 @@ class PynputKeyBinder(KeyBinderBase):
     def unregister_hotkey(self, hotkey: str) -> None:
         hotkey = self.parse_hotkey(hotkey)
         self.listener.stop()
+        self.listener = None
         print(f"Unregistered hotkey: {hotkey}")
         
