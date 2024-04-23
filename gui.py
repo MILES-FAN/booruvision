@@ -1,7 +1,7 @@
 from PIL import ImageGrab, Image
 import sys
 from PyQt5.QtWidgets import QApplication, QMainWindow, QPushButton, QLabel, QVBoxLayout, QWidget, QCheckBox, QComboBox, QTableWidget, QTableWidgetItem
-from PyQt5.QtGui import QCloseEvent, QPixmap, QClipboard, QImage
+from PyQt5.QtGui import QCloseEvent, QPixmap, QClipboard, QImage, QIcon
 from PyQt5.QtCore import Qt, QTimer
 from wd_tagger import wd_tagger
 from PyQt5.QtWidgets import QFileDialog
@@ -24,7 +24,6 @@ def QImage_to_PIL(qimage):
 class TagDisplay(QWidget):
     def __init__(self, tags, parent=None):
         super().__init__()
-
         self.setWindowTitle("Image Tags")
         self.setGeometry(100, 100, self.calc_size(400, 600)[0], self.calc_size(400, 600)[1])
         self.tags = tags
@@ -111,7 +110,7 @@ class TagDisplay(QWidget):
 class ImageInterrogator(QMainWindow):
     def __init__(self):
         super().__init__()
-
+        self.setWindowIcon(QIcon("icon.png"))
         self.windowTittle = "Image Interrogator"
         self.setWindowTitle(self.windowTittle)
         self.setGeometry(100, 100, self.calc_size(800, 600)[0], self.calc_size(800, 600)[1])
