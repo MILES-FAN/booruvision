@@ -58,14 +58,15 @@ threshold = 0.35
 
 Default model is `wd-swinv2-v3` and I also recommend these models:
 - `wd-swinv2-v3` (default, with overall good performance)
-- `wd-convnext-v3` (might deal better with rotated images)
+- `wd-convnext-v3` (might deals rotated images better than other models)
 - `wd-vit-v3` (good at character recognition)
 - `wd14-moat-v2` (Incase you want to use the old model)
 
 Default confidence threshold is `0.35`, lower it if you want more tags (less accurate).
 
 ## Known issues
-- Auto focus on the result window is not working on MacOS
+- User from china mainland might have trouble downloading the model from huggingface
+- macOS keybinding works by excute the script in IDEs (e.g. PyCharm or VSCode), but not in terminal. And it needs you to trust the IDE in `System Preferences -> Security & Privacy -> Privacy -> Input Monitoring` (Not a safe practice, use at your own risk)
 
 ## Copyright
 Original code by https://github.com/picobyte/stable-diffusion-webui-wd14-tagger
