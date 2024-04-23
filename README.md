@@ -1,10 +1,11 @@
 A GUI tool for labeling image from your clipboard or file system using wd tagger
 ---
 ## How to install and run
+[![GitHub Release](https://img.shields.io/github/v/release/MILES-FAN/booruvision?label=Download%20latest%20release&style=for-the-badge)](https://github.com/MILES-FAN/booruvision/releases/)
 
 ### Use the pre-built executable
 
-1. Download the latest release from [here]
+1. Download the latest release from [here](https://github.com/MILES-FAN/booruvision/releases/)
 2. Right click on the downloaded file and select `Run` or `Open`
 3. Wait for the application to start
 
