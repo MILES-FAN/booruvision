@@ -67,6 +67,7 @@ Default confidence threshold is `0.35`, lower it if you want more tags (less acc
 ## Known issues
 - User from china mainland might have trouble downloading the model from huggingface
 - macOS keybinding works by excute the script in IDEs (e.g. PyCharm or VSCode), but not in terminal. And it needs you to trust the IDE in `System Preferences -> Security & Privacy -> Privacy -> Input Monitoring` (Not a safe practice, use at your own risk)
+- switch keybinding through GUI crahes on macOS (not sure why)
 
 ## Copyright
 Original code by https://github.com/picobyte/stable-diffusion-webui-wd14-tagger

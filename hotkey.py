@@ -4,7 +4,9 @@ from PyQt5.QtCore import QAbstractNativeEventFilter, QAbstractEventDispatcher
 from typing import Optional, Callable
 import platform
 
-if platform.system() != "Darwin":
+platform_system = platform.system()
+
+if platform_system != "Darwin":
     from pyqtkeybind import keybinder
     keybindEnabled = True
 else:
