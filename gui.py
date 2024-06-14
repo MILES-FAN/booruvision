@@ -85,6 +85,9 @@ class TagDisplay(QWidget):
         layout.addWidget(self.formatLabel)
         layout.addWidget(self.formatDropdown)
 
+        self.formatCheckbox = QCheckBox("Use , as separator")
+        layout.addWidget(self.formatCheckbox)
+
         self.setLayout(layout)
 
     def changeTagFormat(self):
@@ -109,7 +112,10 @@ class TagDisplay(QWidget):
 
     def getTagString(self):
         tagString = ""
-        tagString = ", ".join([f"{tag}" for tag, confidence in self.formated_tags.items()])
+        if self.formatCheckbox.isChecked():
+            tagString = ", ".join([f"{tag}" for tag, confidence in self.formated_tags.items()])
+        else:
+            tagString = " ".join([f"{tag}" for tag, confidence in self.formated_tags.items()])
         return tagString
 
 class ImageInterrogator(QMainWindow):
@@ -320,8 +326,10 @@ class ImageInterrogator(QMainWindow):
             self.saveConfig()
 
     def analyzeImage(self):
-        # Placeholder for image analysis logic
         print("Analyze the image...")
+        if not self.imageLabel.pixmap():
+            print("No image to analyze!")
+            return
         self.setWindowTitle(f"{self.windowTittle} - Analyzing...")
         pilimage = QImage_to_PIL(self.imageLabel.pixmap().toImage())
         tags = self.tagger.tag_image_by_pil(pilimage)
