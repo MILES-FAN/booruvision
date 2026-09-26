@@ -1,0 +1,38 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+      - name: Install dependencies
+        run: uv sync --locked
+      - name: Lint
+        run: |
+          uv run ruff check .
+          uv run ruff format --check .
+      - name: Test
+        run: uv run pytest -q
+      - name: Import platform hotkey backend
+        # Catches missing platform-specific dependencies / import errors on each OS
+        shell: bash
+        env:
+          PYTHONPATH: src
+        run: |
+          case "${{ runner.os }}" in
+            Windows) mods="windows" ;;
+            macOS)   mods="macos" ;;
+            Linux)   mods="linux_x11 linux_wayland" ;;
+          esac
+          for mod in $mods; do uv run python -c "import booruvision.hotkeys.$mod"; done

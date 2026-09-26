@@ -1,69 +1,86 @@
-A GUI tool for labeling image from your clipboard or file system using wd tagger
+A GUI tool for labeling images from your clipboard or file system using WD tagger models.
+Runs on Windows, macOS and Linux (built with [Flet](https://flet.dev), so it scales correctly on any DPI).
+
 ---
 ## How to install and run
 [![GitHub Release](https://img.shields.io/github/v/release/MILES-FAN/booruvision?label=Download%20latest%20release&style=for-the-badge&logo=windows)](https://github.com/MILES-FAN/booruvision/releases/)
 [![GitHub Release](https://img.shields.io/github/v/release/MILES-FAN/booruvision?label=Download%20latest%20release&style=for-the-badge&logo=apple)](https://github.com/MILES-FAN/booruvision/releases/)
 
-### Use the pre-built executable
+### Use the pre-built app
 
-1. Download the latest release from [here](https://github.com/MILES-FAN/booruvision/releases/)
-2. Right click on the downloaded file and select `Run` or `Open`
+1. Download the latest release for your platform from [here](https://github.com/MILES-FAN/booruvision/releases/)
+2. Unzip it and open `BooruVision`
 3. Wait for the application to start
 
-(Windows excutable gives false positive on some antivirus software, you can build the executable yourself if you don't trust the pre-built one)
+### Run from source
 
-### Use the source code
-
-1. Create a virtual environment and activate it
+Requires [uv](https://docs.astral.sh/uv/).
 
 ```bash
-python3 -m venv venv
+uv sync                          # creates .venv and installs locked dependencies
+uv run flet run src/main.py      # start the app
 ```
 
-for windows
-```bash
-./venv/scripts/activate
-```
+The first analysis downloads the selected model from Hugging Face, so it takes a while.
 
-for macos and linux
-```bash
-source venv/bin/activate
-```
+### Build a distributable app
 
-2. Install the requirements
+Each platform must be built on that platform (no cross compilation):
 
 ```bash
-pip install -r requirements.txt
+uv run flet build macos     # or: windows / linux
 ```
 
-3. Run the application
+The result is written to `build/<platform>`. The `Build` GitHub workflow builds all three
+platforms when a `v*` tag is pushed (or when started manually).
+
+### Development
 
 ```bash
-python gui.py
+uv run pytest            # tests
+uv run ruff check .      # lint
+uv run ruff format .     # format
+uv add <package>         # add a dependency (updates pyproject.toml and uv.lock)
 ```
-
-It may take a while to initialize the application for the first time.
 
 ## How to use
-![interface](imgs/interface.png)
-1. Copy an image to your clipboard or select a file
-2. Click on the `load image from clipboard` or `load image from file` button
-3. Click on the `analyze image` button or press a keybinding.
-4. The tags will be displayed in a new window (First time will take a while to download pre-trained model)
-5. You can copy the tags to your clipboard by clicking on the `copy tags to clipboard` button
-![tags](imgs/tagswindow.png)
-Extra: 
-- Check `Unload model after every analysis` can save you some memory, but it will take longer to analyze the image
-- You can choose tag format, currently support `Booru` and `Stable Diffusion` format
+1. Copy an image (or an image file in your file manager) to the clipboard, or pick a file
+2. Click `From clipboard` or `From file`
+3. Click `Analyze`, or press the global shortcut to load the clipboard and analyze it in one step
+4. Tags appear in the panel next to the image (below it on narrow windows)
+5. Click `Copy tags` to copy them in the selected format
+
+Extra:
+- `Unload model after every analysis` saves memory, but every analysis has to reload the model
+- Tag format can be `Booru` or `Stable Diffusion`, with space or `, ` as the separator
+
+## Global shortcut
+The default shortcut is `Ctrl+Shift+I`. How it works depends on the platform:
+
+| Platform | Mechanism | Notes |
+|---|---|---|
+| Windows | `RegisterHotKey` | Fails with a message if another app already uses the combination |
+| macOS | `CGEventTap` | Needs **Input Monitoring**: System Settings → Privacy & Security → Input Monitoring, enable BooruVision (or your terminal when running from source), then restart the app. `Ctrl` means the Control key |
+| Linux (X11) | `XGrabKey` | Works on any X11 session |
+| Linux (Wayland) | xdg-desktop-portal GlobalShortcuts | KDE Plasma and GNOME 48+. The desktop asks you to confirm the shortcut the first time; change it in the system keyboard settings |
+
+If no mechanism is available, the app still works and shows why the shortcut is disabled.
 
 ## Configuration
-After the first run, a `config.ini` file will be created in the same directory as the script. You can change the configuration there.
+Settings are saved automatically to `config.ini` in your user config directory:
+
+- Windows: `%LOCALAPPDATA%\booruvision\config.ini`
+- macOS: `~/Library/Application Support/booruvision/config.ini`
+- Linux: `~/.config/booruvision/config.ini`
+
+A `config.ini` from an older version in the working directory is imported on first start.
 
 ```ini
 [GUI]
 shortcut = Ctrl+Shift+I
 unload_model_when_done = False
-tag_format = booru
+tag_format = Booru
+comma_separated = False
 
 [Tagger]
 model = wd-swinv2-v3
@@ -72,18 +89,31 @@ threshold = 0.35
 
 Default model is `wd-swinv2-v3` and I also recommend these models:
 - `wd-swinv2-v3` (default, with overall good performance)
-- `wd-convnext-v3` (might deals rotated images better than other models)
+- `wd-convnext-v3` (might deal with rotated images better than other models)
 - `wd-vit-v3` (good at character recognition)
-- `wd14-moat-v2` (Incase you want to use the old model)
+- `wd14-moat-v2` (in case you want to use the old model)
 
-Default confidence threshold is `0.35`, lower it if you want more tags (less accurate).
+Default confidence threshold is `0.35`; lower it if you want more tags (less accurate).
+
+## Project layout
+```
+src/main.py                 entry point (used by `flet run` and `flet build`)
+src/assets/                 app icon
+src/booruvision/
+  app.py                    main window and event handling
+  config.py                 settings persistence
+  formatting.py             Booru / Stable Diffusion output formats
+  clipboard.py              clipboard image reading
+  ui/                       image panel, tag panel, settings bar
+  tagging/                  ONNX interrogators, preprocessing, model registry
+  hotkeys/                  one global-hotkey backend per platform
+tests/
+```
 
 ## Known issues
-- User from china mainland might have trouble downloading the model from huggingface
-- macOS keybinding works by excute the script in IDEs (e.g. PyCharm or VSCode), but not in terminal. And it needs you to trust the IDE in `System Preferences -> Security & Privacy -> Privacy -> Input Monitoring` (Not a safe practice, use at your own risk)
-- switch keybinding through GUI crahes on macOS (not sure why)
+- Users in mainland China might have trouble downloading the models from Hugging Face
 
 ## Copyright
 Original code by https://github.com/picobyte/stable-diffusion-webui-wd14-tagger
 
-Public domain, except borrowed parts (e.g. `dbimutils.py`)
+Public domain, except borrowed parts (e.g. `tagging/preprocess.py`)

@@ -1,0 +1,55 @@
+[project]
+name = "booruvision"
+version = "0.2.0"
+description = "Tag images from your clipboard or file system with WD tagger models"
+readme = "README.md"
+requires-python = ">=3.12"
+authors = [{ name = "MILES-FAN" }]
+dependencies = [
+    "flet==1.0.*",
+    "onnxruntime>=1.20",
+    "numpy>=1.26",
+    "pillow>=10.0",
+    "huggingface_hub>=0.24",
+    "opencv-python-headless>=4.9",
+    "platformdirs>=4.0",
+    # Global hotkey backends, one per platform
+    "pyobjc-framework-Quartz>=10.0; sys_platform == 'darwin'",
+    "python-xlib>=0.33; sys_platform == 'linux'",
+    "dbus-next>=0.2.3; sys_platform == 'linux'",
+]
+
+[dependency-groups]
+dev = [
+    "flet[all]==1.0.*",
+    "pytest>=8.0",
+    "ruff>=0.6",
+]
+
+[tool.flet]
+product = "BooruVision"
+company = "MILES-FAN"
+copyright = "Copyright (C) 2024-2026 MILES-FAN"
+
+[tool.flet.app]
+path = "src"
+
+[tool.flet.macos]
+# onnxruntime only ships arm64 wheels for macOS, so Intel Macs are not supported
+target_arch = ["arm64"]
+# The global hotkey uses a CGEventTap, which sandboxed apps cannot create
+entitlement."com.apple.security.app-sandbox" = false
+
+[tool.uv]
+package = false
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 110
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP"]
