@@ -39,6 +39,9 @@ path = "src"
 target_arch = ["arm64"]
 # The global hotkey uses a CGEventTap, which sandboxed apps cannot create
 entitlement."com.apple.security.app-sandbox" = false
+# Globs relative to site-packages, removed before the Xcode build. pyobjc ships a test suite
+# with malformed .dSYM debug files that make Xcode's strip step fail; neither is needed at runtime.
+cleanup.package_files = ["PyObjCTest", "**.dSYM"]
 
 [tool.uv]
 package = false
