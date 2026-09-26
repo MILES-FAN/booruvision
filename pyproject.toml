@@ -30,6 +30,11 @@ dev = [
 product = "BooruVision"
 company = "MILES-FAN"
 copyright = "Copyright (C) 2024-2026 MILES-FAN"
+# Ship site-packages as .py. Compiling them makes the build delete every .py source, but
+# OpenCV's loader reads cv2/config.py and cv2/config-3.py as text at import time, so the app
+# fails to start without them. The runtime sets PYTHONDONTWRITEBYTECODE, so nothing is written
+# into the bundle; imports are compiled in memory instead (about 0.5 s at startup).
+compile.packages = false
 
 [tool.flet.app]
 path = "src"

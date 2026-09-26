@@ -94,6 +94,10 @@ tests/                     pytest; pythonpath = src
   installed package in `.venv` rather than older docs or examples.
 - **Python version.** `.python-version` is 3.14 because `flet build` bundles the newest Python
   allowed by `requires-python`. Keep dev, CI and the bundle on the same version.
+- **Packages ship as `.py`** (`[tool.flet] compile.packages = false`). Compiling them makes the
+  build delete every `.py` in site-packages, and OpenCV's loader reads `cv2/config.py` and
+  `cv2/config-3.py` as text, so every packaged app failed at `import cv2`. Don't re-enable it
+  without checking that a packaged build still imports cv2.
 - **macOS builds are arm64-only** (`[tool.flet.macos] target_arch`): onnxruntime ships no x86_64
   macOS wheels. The app is not sandboxed, because CGEventTap requires that.
 
