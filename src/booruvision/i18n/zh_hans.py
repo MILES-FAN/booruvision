@@ -10,6 +10,9 @@ MESSAGES = {
     "main.open_image": "打开图片",
     "main.load_image_first": "请先载入图片",
     "main.clipboard_no_image": "剪贴板中没有图片",
+    "main.clipboard_needs_wl_paste": (
+        "剪贴板中没有图片。在 Wayland 下需要安装 wl-clipboard（wl-paste），快捷键才能读取剪贴板"
+    ),
     "main.open_failed": "无法打开图片：{error}",
     "main.analysis_failed": "分析失败：{error}",
     "main.copied": "已复制 {count} 个标签",

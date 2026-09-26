@@ -68,6 +68,10 @@ uv run python src/main.py        # 启动应用
 
 如果没有可用的实现方式，应用仍可正常使用，并会显示快捷键被停用的原因。
 
+在 Wayland 下，应用只有在窗口获得焦点时才能读取剪贴板，而按下快捷键时它并不在前台。请安装
+`wl-clipboard`（例如 `sudo pacman -S wl-clipboard` 或 `sudo apt install wl-clipboard`），BooruVision
+会通过其中的 `wl-paste` 在后台读取剪贴板。
+
 ## 配置
 设置会自动保存到用户配置目录中的 `config.ini`：
 

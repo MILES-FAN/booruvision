@@ -10,6 +10,11 @@ MESSAGES = {
     "main.open_image": "画像を開く",
     "main.load_image_first": "先に画像を読み込んでください",
     "main.clipboard_no_image": "クリップボードに画像がありません",
+    "main.clipboard_needs_wl_paste": (
+        "クリップボードに画像がありません。"
+        "Wayland ではショートカットでクリップボードを読むために"
+        " wl-clipboard（wl-paste）をインストールしてください"
+    ),
     "main.open_failed": "画像を開けませんでした：{error}",
     "main.analysis_failed": "解析に失敗しました：{error}",
     "main.copied": "{count} 個のタグをコピーしました",

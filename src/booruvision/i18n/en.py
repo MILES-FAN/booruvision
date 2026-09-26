@@ -10,6 +10,10 @@ MESSAGES = {
     "main.open_image": "Open image",
     "main.load_image_first": "Load an image first",
     "main.clipboard_no_image": "The clipboard does not contain an image",
+    "main.clipboard_needs_wl_paste": (
+        "No clipboard image found. On Wayland, install"
+        " wl-clipboard (wl-paste) so the shortcut can read the clipboard"
+    ),
     "main.open_failed": "Could not open image: {error}",
     "main.analysis_failed": "Analysis failed: {error}",
     "main.copied": "Copied {count} tags",

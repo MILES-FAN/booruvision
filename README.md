@@ -72,6 +72,10 @@ How it works depends on the platform:
 
 If no mechanism is available, the app still works and shows why the shortcut is disabled.
 
+On Wayland, an app can only read the clipboard while its window has focus, which it doesn't when the
+shortcut fires. Install `wl-clipboard` (for example `sudo pacman -S wl-clipboard` or
+`sudo apt install wl-clipboard`); BooruVision uses its `wl-paste` to read the clipboard in the background.
+
 ## Configuration
 Settings are saved automatically to `config.ini` in your user config directory:
 

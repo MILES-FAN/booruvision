@@ -290,7 +290,12 @@ class BooruVisionApp:
     async def load_from_clipboard(self) -> bool:
         image = await clipboard.read_image()
         if image is None:
-            self._snack(t("main.clipboard_no_image"))
+            key = (
+                "main.clipboard_needs_wl_paste"
+                if clipboard.wayland_tool_missing()
+                else "main.clipboard_no_image"
+            )
+            self._snack(t(key))
             return False
         self._set_image(image)
         return True

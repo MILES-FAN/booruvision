@@ -70,6 +70,10 @@ macOS では、初回起動時に名前とアイコンを BooruVision にした 
 
 利用できる仕組みがない場合でもアプリは動作し、ショートカットが無効になっている理由を表示します。
 
+Wayland では、アプリはウィンドウにフォーカスがあるときしかクリップボードを読めませんが、ショートカットを
+押したときはフォーカスがありません。`wl-clipboard` をインストールしてください（例：`sudo pacman -S wl-clipboard`、
+`sudo apt install wl-clipboard`）。BooruVision はその `wl-paste` を使ってバックグラウンドでクリップボードを読みます。
+
 ## 設定
 設定はユーザー設定ディレクトリの `config.ini` に自動で保存されます：
 
