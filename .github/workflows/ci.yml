@@ -1,18 +1,32 @@
 name: CI
 
+# push (any branch) / PR  → lint + tests on Windows, macOS and Linux
+# PR, push to master, tag → also build the app for all three platforms
+# tag v*                  → also publish a GitHub Release with the builds attached
 on:
   push:
+    branches: ["**"]
+    tags: ["v*"]
   pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ !startsWith(github.ref, 'refs/tags/') }}
+
+permissions:
+  contents: read
 
 jobs:
   test:
+    name: Test (${{ matrix.os }})
     strategy:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: astral-sh/setup-uv@v6
         with:
           enable-cache: true
@@ -36,3 +50,112 @@ jobs:
             Linux)   mods="linux_x11 linux_wayland" ;;
           esac
           for mod in $mods; do uv run python -c "import booruvision.hotkeys.$mod"; done
+
+  build:
+    name: Build (${{ matrix.target }})
+    needs: test
+    # Feature-branch pushes only run tests; open a PR to get builds
+    if: >-
+      github.event_name != 'push'
+      || github.ref == 'refs/heads/master'
+      || startsWith(github.ref, 'refs/tags/v')
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            target: windows
+            asset: BooruVision-windows-x64.zip
+          - os: macos-latest
+            target: macos
+            asset: BooruVision-macos-arm64.zip
+          - os: ubuntu-latest
+            target: linux
+            asset: BooruVision-linux-x64.tar.gz
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+      - name: Install dependencies
+        run: uv sync --locked
+
+      - name: Determine version
+        id: version
+        shell: bash
+        run: |
+          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then
+            version="${GITHUB_REF_NAME#v}"
+          else
+            version="$(uv version --short)"
+          fi
+          # flet wants x.y.z; drop pre-release suffixes like -rc1
+          echo "version=${version%%-*}" >> "$GITHUB_OUTPUT"
+
+      - name: Cache Flutter SDK
+        # flet build downloads the Flutter SDK matching the locked flet version into ~/flutter
+        uses: actions/cache@v4
+        with:
+          path: ~/flutter
+          key: flutter-${{ runner.os }}-${{ hashFiles('uv.lock') }}
+
+      - name: Install Linux build dependencies
+        if: matrix.target == 'linux'
+        run: |
+          LINUX_DEPS="$(uv run flet --version --json | jq -r '.linux_dependencies | join(" ")')"
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends $LINUX_DEPS
+
+      - name: Build
+        run: >-
+          uv run flet build ${{ matrix.target }}
+          --build-version ${{ steps.version.outputs.version }}
+          --build-number ${{ github.run_number }}
+          --yes --no-rich-output
+
+      # Archive before upload: upload-artifact drops symlinks and execute bits,
+      # which breaks the macOS .app bundle and the Linux executable
+      - name: Archive (macOS)
+        if: matrix.target == 'macos'
+        run: |
+          mkdir -p dist
+          app="$(find build/macos -maxdepth 1 -name '*.app' | head -n 1)"
+          test -n "$app"
+          ditto -c -k --sequesterRsrc --keepParent "$app" "dist/${{ matrix.asset }}"
+      - name: Archive (Windows)
+        if: matrix.target == 'windows'
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force dist | Out-Null
+          Compress-Archive -Path build/windows/* -DestinationPath "dist/${{ matrix.asset }}"
+      - name: Archive (Linux)
+        if: matrix.target == 'linux'
+        run: |
+          mkdir -p dist
+          tar -czf "dist/${{ matrix.asset }}" -C build/linux .
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.asset }}
+          path: dist/${{ matrix.asset }}
+          if-no-files-found: error
+          compression-level: 0 # already compressed
+
+  release:
+    name: Publish release
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*
+          generate_release_notes: true
+          prerelease: ${{ contains(github.ref_name, '-') }}

@@ -8,9 +8,13 @@ Runs on Windows, macOS and Linux (built with [Flet](https://flet.dev), so it sca
 
 ### Use the pre-built app
 
-1. Download the latest release for your platform from [here](https://github.com/MILES-FAN/booruvision/releases/)
+1. Download the latest release for your platform from [here](https://github.com/MILES-FAN/booruvision/releases/):
+   `BooruVision-windows-x64.zip`, `BooruVision-macos-arm64.zip` (Apple Silicon) or `BooruVision-linux-x64.tar.gz`
 2. Unzip it and open `BooruVision`
 3. Wait for the application to start
+
+The macOS app is not notarized, so the first launch is blocked by Gatekeeper. Right-click the app and
+choose `Open`, or run `xattr -dr com.apple.quarantine BooruVision.app`.
 
 ### Run from source
 
@@ -27,26 +31,6 @@ in `.flet-client/`, so the Dock and menu bar show the right app. For hot reload 
 the app code runs, so it needs the path up front).
 
 The first analysis downloads the selected model from Hugging Face, so it takes a while.
-
-### Build a distributable app
-
-Each platform must be built on that platform (no cross compilation):
-
-```bash
-uv run flet build macos     # or: windows / linux
-```
-
-The result is written to `build/<platform>`. The `Build` GitHub workflow builds all three
-platforms when a `v*` tag is pushed (or when started manually).
-
-### Development
-
-```bash
-uv run pytest            # tests
-uv run ruff check .      # lint
-uv run ruff format .     # format
-uv add <package>         # add a dependency (updates pyproject.toml and uv.lock)
-```
 
 ## How to use
 1. Copy an image (or an image file in your file manager) to the clipboard, or pick a file
@@ -104,21 +88,6 @@ Default model is `wd-swinv2-v3` and I also recommend these models:
 - `wd14-moat-v2` (in case you want to use the old model)
 
 Default confidence threshold is `0.35`; lower it if you want more tags (less accurate).
-
-## Project layout
-```
-src/main.py                 entry point (run directly, or via `flet run` / `flet build`)
-src/assets/                 app icon
-src/booruvision/
-  app.py                    main window and event handling
-  config.py                 settings persistence
-  formatting.py             Booru / Stable Diffusion output formats
-  clipboard.py              clipboard image reading
-  ui/                       image panel, tag panel, settings bar
-  tagging/                  ONNX interrogators, preprocessing, model registry
-  hotkeys/                  one global-hotkey backend per platform
-tests/
-```
 
 ## Known issues
 - Users in mainland China might have trouble downloading the models from Hugging Face
