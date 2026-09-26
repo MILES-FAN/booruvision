@@ -12,8 +12,10 @@ import asyncio
 import logging
 import secrets
 import threading
+import xml.etree.ElementTree as ET
 
 from dbus_next import BusType, Message, MessageType, Variant
+from dbus_next import introspection as intr
 from dbus_next.aio import MessageBus
 
 from booruvision.hotkeys.base import Hotkey, HotkeyBackend, HotkeyCallback, HotkeyError, Modifier
@@ -45,6 +47,21 @@ def preferred_trigger(hotkey: Hotkey) -> str:
     mods = [_TRIGGER_MODIFIERS[m] for m in _TRIGGER_ORDER if m in hotkey.modifiers]
     key = hotkey.key.lower() if len(hotkey.key) == 1 else hotkey.key
     return "+".join([*mods, key])
+
+
+def shortcuts_only(introspection_xml: str) -> str:
+    """Keep only the GlobalShortcuts interface of the portal object's introspection XML.
+
+    dbus-next rejects a whole document if any member name fails its validation, and the portal
+    object has members it considers invalid, such as PowerProfileMonitor's
+    "power-saver-enabled" property. Returns a document without interfaces if the portal has
+    no GlobalShortcuts support.
+    """
+    root = ET.fromstring(introspection_xml)
+    for child in list(root):
+        if child.tag != "interface" or child.get("name") != SHORTCUTS_IFACE:
+            root.remove(child)
+    return ET.tostring(root, encoding="unicode")
 
 
 class WaylandPortalHotkeyBackend(HotkeyBackend):
@@ -91,8 +108,20 @@ class WaylandPortalHotkeyBackend(HotkeyBackend):
             )
         )
 
-        introspection = await self._bus.introspect(PORTAL_BUS, PORTAL_PATH)
-        if not any(i.name == SHORTCUTS_IFACE for i in introspection.interfaces):
+        reply = await self._bus.call(
+            Message(
+                destination=PORTAL_BUS,
+                path=PORTAL_PATH,
+                interface="org.freedesktop.DBus.Introspectable",
+                member="Introspect",
+            )
+        )
+        if reply.message_type == MessageType.ERROR:
+            raise HotkeyError(
+                Msg("hotkey.portal_error", error=reply.body[0] if reply.body else reply.error_name)
+            )
+        introspection = intr.Node.parse(shortcuts_only(reply.body[0]))
+        if not introspection.interfaces:
             raise HotkeyError(Msg("hotkey.portal_unsupported"))
         proxy = self._bus.get_proxy_object(PORTAL_BUS, PORTAL_PATH, introspection)
         self._shortcuts = proxy.get_interface(SHORTCUTS_IFACE)
