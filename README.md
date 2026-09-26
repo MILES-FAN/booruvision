@@ -5,13 +5,14 @@ Runs on Windows, macOS and Linux (built with [Flet](https://flet.dev)).
 
 ---
 ## How to install and run
-[![GitHub Release](https://img.shields.io/github/v/release/MILES-FAN/booruvision?label=Download%20latest%20release&style=for-the-badge&logo=windows)](https://github.com/MILES-FAN/booruvision/releases/)
-[![GitHub Release](https://img.shields.io/github/v/release/MILES-FAN/booruvision?label=Download%20latest%20release&style=for-the-badge&logo=apple)](https://github.com/MILES-FAN/booruvision/releases/)
+[![Windows](https://img.shields.io/github/v/release/MILES-FAN/booruvision?label=Windows&style=for-the-badge&logo=windows)](https://github.com/MILES-FAN/booruvision/releases/latest/download/BooruVision-windows-x64.zip)
+[![macOS](https://img.shields.io/github/v/release/MILES-FAN/booruvision?label=macOS&style=for-the-badge&logo=apple)](https://github.com/MILES-FAN/booruvision/releases/latest/download/BooruVision-macos-arm64.zip)
+[![Linux](https://img.shields.io/github/v/release/MILES-FAN/booruvision?label=Linux&style=for-the-badge&logo=linux)](https://github.com/MILES-FAN/booruvision/releases/latest/download/BooruVision-linux-x64.tar.gz)
 
 ### Use the pre-built app
 
-1. Download the latest release for your platform from [here](https://github.com/MILES-FAN/booruvision/releases/):
-   `BooruVision-windows-x64.zip`, `BooruVision-macos-arm64.zip` (Apple Silicon) or `BooruVision-linux-x64.tar.gz`
+1. Download the latest release for your platform: [`BooruVision-windows-x64.zip`](https://github.com/MILES-FAN/booruvision/releases/latest/download/BooruVision-windows-x64.zip), [`BooruVision-macos-arm64.zip`](https://github.com/MILES-FAN/booruvision/releases/latest/download/BooruVision-macos-arm64.zip) (Apple Silicon) or
+   [`BooruVision-linux-x64.tar.gz`](https://github.com/MILES-FAN/booruvision/releases/latest/download/BooruVision-linux-x64.tar.gz). Older versions are on the [releases page](https://github.com/MILES-FAN/booruvision/releases)
 2. Unzip it and open `BooruVision`
 3. Wait for the application to start
 

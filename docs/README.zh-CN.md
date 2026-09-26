@@ -5,13 +5,14 @@
 
 ---
 ## 安装与运行
-[![GitHub Release](https://img.shields.io/github/v/release/MILES-FAN/booruvision?label=Download%20latest%20release&style=for-the-badge&logo=windows)](https://github.com/MILES-FAN/booruvision/releases/)
-[![GitHub Release](https://img.shields.io/github/v/release/MILES-FAN/booruvision?label=Download%20latest%20release&style=for-the-badge&logo=apple)](https://github.com/MILES-FAN/booruvision/releases/)
+[![Windows](https://img.shields.io/github/v/release/MILES-FAN/booruvision?label=Windows&style=for-the-badge&logo=windows)](https://github.com/MILES-FAN/booruvision/releases/latest/download/BooruVision-windows-x64.zip)
+[![macOS](https://img.shields.io/github/v/release/MILES-FAN/booruvision?label=macOS&style=for-the-badge&logo=apple)](https://github.com/MILES-FAN/booruvision/releases/latest/download/BooruVision-macos-arm64.zip)
+[![Linux](https://img.shields.io/github/v/release/MILES-FAN/booruvision?label=Linux&style=for-the-badge&logo=linux)](https://github.com/MILES-FAN/booruvision/releases/latest/download/BooruVision-linux-x64.tar.gz)
 
 ### 使用预构建版本
 
-1. 从[这里](https://github.com/MILES-FAN/booruvision/releases/)下载适合你平台的最新版本：
-   `BooruVision-windows-x64.zip`、`BooruVision-macos-arm64.zip`（Apple 芯片）或 `BooruVision-linux-x64.tar.gz`
+1. 下载适合你平台的最新版本：[`BooruVision-windows-x64.zip`](https://github.com/MILES-FAN/booruvision/releases/latest/download/BooruVision-windows-x64.zip)、[`BooruVision-macos-arm64.zip`](https://github.com/MILES-FAN/booruvision/releases/latest/download/BooruVision-macos-arm64.zip)（Apple 芯片）或
+   [`BooruVision-linux-x64.tar.gz`](https://github.com/MILES-FAN/booruvision/releases/latest/download/BooruVision-linux-x64.tar.gz)。旧版本请见[发布页面](https://github.com/MILES-FAN/booruvision/releases)
 2. 解压后打开 `BooruVision`
 3. 等待应用启动
 

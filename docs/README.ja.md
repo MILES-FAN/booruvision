@@ -5,13 +5,14 @@ Windows、macOS、Linux で動作します（[Flet](https://flet.dev) で作ら�
 
 ---
 ## インストールと起動
-[![GitHub Release](https://img.shields.io/github/v/release/MILES-FAN/booruvision?label=Download%20latest%20release&style=for-the-badge&logo=windows)](https://github.com/MILES-FAN/booruvision/releases/)
-[![GitHub Release](https://img.shields.io/github/v/release/MILES-FAN/booruvision?label=Download%20latest%20release&style=for-the-badge&logo=apple)](https://github.com/MILES-FAN/booruvision/releases/)
+[![Windows](https://img.shields.io/github/v/release/MILES-FAN/booruvision?label=Windows&style=for-the-badge&logo=windows)](https://github.com/MILES-FAN/booruvision/releases/latest/download/BooruVision-windows-x64.zip)
+[![macOS](https://img.shields.io/github/v/release/MILES-FAN/booruvision?label=macOS&style=for-the-badge&logo=apple)](https://github.com/MILES-FAN/booruvision/releases/latest/download/BooruVision-macos-arm64.zip)
+[![Linux](https://img.shields.io/github/v/release/MILES-FAN/booruvision?label=Linux&style=for-the-badge&logo=linux)](https://github.com/MILES-FAN/booruvision/releases/latest/download/BooruVision-linux-x64.tar.gz)
 
 ### ビルド済みのアプリを使う
 
-1. [こちら](https://github.com/MILES-FAN/booruvision/releases/)からお使いのプラットフォーム向けの最新版をダウンロードします：
-   `BooruVision-windows-x64.zip`、`BooruVision-macos-arm64.zip`（Apple シリコン）、または `BooruVision-linux-x64.tar.gz`
+1. お使いのプラットフォーム向けの最新版をダウンロードします：[`BooruVision-windows-x64.zip`](https://github.com/MILES-FAN/booruvision/releases/latest/download/BooruVision-windows-x64.zip)、[`BooruVision-macos-arm64.zip`](https://github.com/MILES-FAN/booruvision/releases/latest/download/BooruVision-macos-arm64.zip)（Apple シリコン）、または
+   [`BooruVision-linux-x64.tar.gz`](https://github.com/MILES-FAN/booruvision/releases/latest/download/BooruVision-linux-x64.tar.gz)。過去のバージョンは[リリースページ](https://github.com/MILES-FAN/booruvision/releases)にあります
 2. 展開して `BooruVision` を開きます
 3. アプリが起動するまで待ちます
 
