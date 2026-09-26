@@ -39,7 +39,7 @@ src/booruvision/
   clipboard.py             clipboard image: ft.Clipboard first, Pillow ImageGrab fallback
   devclient.py             macOS-only branded dev client (see above)
   ui/                      image_panel, tag_panel, settings_bar, config_page (/config route)
-  tagging/                 interrogators, preprocessing, model registry, TaggerService
+  tagging/                 interrogators, preprocessing, model registry, Prediction, TaggerService
   hotkeys/                 base.py (Hotkey, HotkeyBackend) + one backend per platform
 tests/                     pytest; pythonpath = src
 ```
@@ -63,9 +63,17 @@ tests/                     pytest; pythonpath = src
 - **Hotkey strings.** Parse and validate with `Hotkey.parse` / `Hotkey.create`. At least one
   modifier is required. Keys are A–Z, 0–9 and F1–F24 (macOS supports up to F20). Store
   `str(hotkey)` in config; show `display_shortcut()` in the UI (platform modifier names).
-- **Model output must not change.** Preprocessing (`tagging/preprocess.py`, OpenCV) and
-  postprocessing match the original implementation exactly. Check any change there against the
-  previous version on a real image, not just unit tests.
+- **Model output must not change.** WD preprocessing (`tagging/preprocess.py`, OpenCV) matches
+  the original implementation exactly. PixAI preprocessing matches the official v1.0 pipeline
+  (`tagger_pipeline.py`) and dghs-imgutils for v0.9. Check any change there against the previous
+  version or the reference on a real image, not just unit tests.
+- **Predictions are cached.** `Interrogator.interrogate` returns a `Prediction` holding every
+  tag's score and category. Thresholds and the ticked categories are applied afterwards by
+  `Prediction.select`, so changing them never re-runs the model. Models with
+  `default_thresholds` (PixAI) get a threshold per category; the others use the global slider.
+- **PixAI v1.0 external data.** The ONNX weights are in `model.onnx.data`. onnxruntime rejects
+  external data that resolves outside the model's directory, which the Hugging Face cache's
+  symlinks do, so the weights are passed in as a memory-mapped buffer.
 - **Config compatibility.** Keep the existing `config.ini` keys (`[GUI]` shortcut /
   unload_model_when_done / tag_format / comma_separated, `[Tagger]` model / threshold). Invalid
   values fall back to defaults. A legacy `./config.ini` is imported on first start.

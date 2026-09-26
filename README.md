@@ -1,4 +1,4 @@
-A GUI tool for labeling images from your clipboard or file system using WD tagger models.
+A GUI tool for labeling images from your clipboard or file system using WD tagger and PixAI tagger models.
 Runs on Windows, macOS and Linux (built with [Flet](https://flet.dev), so it scales correctly on any DPI).
 
 ---
@@ -36,8 +36,13 @@ The first analysis downloads the selected model from Hugging Face, so it takes a
 1. Copy an image (or an image file in your file manager) to the clipboard, or pick a file
 2. Click `From clipboard` or `From file`
 3. Click `Analyze`, or press the global shortcut to load the clipboard and analyze it in one step
-4. Tags appear in the panel next to the image (below it on narrow windows)
-5. Click `Copy tags` to copy them in the selected format
+4. Tags appear in the panel next to the image (below it on narrow windows), colored by their
+   Danbooru category: general, character, copyright, style (artist) and meta
+5. Tick the categories you want above the tag list, then click `Copy tags` to copy them in the
+   selected format
+
+Changing a threshold or the ticked categories updates the list right away, without analyzing the
+image again.
 
 Extra:
 - `Unload model after every analysis` saves memory, but every analysis has to reload the model
@@ -75,10 +80,15 @@ shortcut = Ctrl+Shift+I
 unload_model_when_done = False
 tag_format = Booru
 comma_separated = False
+categories = general,character,copyright
 
 [Tagger]
 model = wd-swinv2-v3
 threshold = 0.35
+
+# Only written for thresholds you changed from the recommended ones
+[Thresholds pixai-v1.0]
+general = 0.25
 ```
 
 Default model is `wd-swinv2-v3` and I also recommend these models:
@@ -88,6 +98,17 @@ Default model is `wd-swinv2-v3` and I also recommend these models:
 - `wd14-moat-v2` (in case you want to use the old model)
 
 Default confidence threshold is `0.35`; lower it if you want more tags (less accurate).
+
+### PixAI tagger
+- `pixai-v1.0`: [PixAI Tagger v1.0](https://huggingface.co/pixai-labs/pixai-tagger-v1.0), about
+  31,000 tags in general, character, copyright, style (artist), meta and rating categories
+- `pixai-v0.9`: [PixAI Tagger v0.9](https://huggingface.co/pixai-labs/pixai-tagger-v0.9), general
+  and character tags; copyright tags are derived from the detected characters
+
+PixAI models have a threshold per category instead of the single slider. Each one starts at the
+model's recommended value and can be edited next to its category (`Reset` restores the recommended
+values). They are much larger than the WD models: the first analysis downloads about 2 GB for v1.0
+and 1.3 GB for v0.9, and v1.0 needs around 4 GB of memory and a few seconds per image on a CPU.
 
 ## Known issues
 - Users in mainland China might have trouble downloading the models from Hugging Face
