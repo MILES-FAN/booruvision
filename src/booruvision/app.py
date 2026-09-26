@@ -13,7 +13,9 @@ from booruvision.config import ConfigStore, Settings
 from booruvision.formatting import TagFormat, join_tags
 from booruvision.hotkeys import Hotkey, HotkeyBackend, HotkeyError, create_backend
 from booruvision.tagging import TaggerService
+from booruvision.tagging.categories import Category
 from booruvision.tagging.models import DEFAULT_MODEL
+from booruvision.tagging.prediction import Prediction, TagResult
 from booruvision.ui.config_page import CONFIG_ROUTE, DEFAULT_SHORTCUT, ConfigPage, display_shortcut
 from booruvision.ui.image_panel import ImagePanel
 from booruvision.ui.settings_bar import SettingsBar
@@ -48,12 +50,13 @@ class BooruVisionApp:
 
         self.tagger = TaggerService(
             model=self.settings.model,
-            threshold=self.settings.threshold,
             unload_after=self.settings.unload_model_when_done,
         )
         self.hotkeys: HotkeyBackend = create_backend()
         self.image: Image.Image | None = None
-        self.tags: dict[str, float] = {}
+        # Raw output of the last analysis; threshold and category changes re-filter it
+        self.prediction: Prediction | None = None
+        self.tags: list[TagResult] = []
         self.busy = False
 
         self.image_panel = ImagePanel()
@@ -63,6 +66,9 @@ class BooruVisionApp:
             on_copy=lambda: self.page.run_task(self.copy_tags),
             on_format_change=self.change_tag_format,
             on_separator_change=self.change_separator,
+            on_category_toggle=self.toggle_category,
+            on_category_threshold=self.change_category_threshold,
+            on_reset_thresholds=self.reset_category_thresholds,
         )
         self.settings_bar = SettingsBar(
             models=TaggerService.available_models(),
@@ -75,6 +81,7 @@ class BooruVisionApp:
             on_unload_change=self.change_unload,
             on_open_config=self.open_config,
         )
+        self._apply_model_controls()
         self.config_page = ConfigPage(page, shortcut=self.settings.shortcut, on_apply=self.change_shortcut)
 
         self.clipboard_button = ft.Button(
@@ -126,6 +133,8 @@ class BooruVisionApp:
         page.on_route_change = lambda _: self._on_route_change()
         page.on_view_pop = self._on_view_pop
         page.on_keyboard_event = self.config_page.handle_key
+        page.on_platform_brightness_change = lambda _: self._apply_brightness()
+        self._apply_brightness(update=False)
 
         self.root = ft.Column([self.panels, ft.Divider(height=1), self.settings_bar.view], expand=True)
         self._apply_layout()
@@ -159,6 +168,11 @@ class BooruVisionApp:
                 children, expand=True, spacing=16, vertical_alignment=ft.CrossAxisAlignment.STRETCH
             )
         self.page.update()
+
+    def _apply_brightness(self, update: bool = True) -> None:
+        self.tag_panel.set_dark(self.page.platform_brightness == ft.Brightness.DARK)
+        if update:
+            self.page.update()
 
     async def _register_initial_hotkey(self) -> None:
         try:
@@ -212,6 +226,36 @@ class BooruVisionApp:
         self.analyze_button.disabled = self.busy
         self.page.update()
 
+    def _category_thresholds(self) -> dict[Category, float] | None:
+        """The current model's per-category thresholds, or None if it uses the global one."""
+        defaults = TaggerService.info(self.tagger.model).default_thresholds
+        if defaults is None:
+            return None
+        return defaults | self.settings.category_thresholds.get(self.tagger.model, {})
+
+    def _thresholds(self) -> dict[Category, float]:
+        thresholds = self._category_thresholds()
+        if thresholds is None:
+            return {c: self.settings.threshold for c in Category}
+        return thresholds
+
+    def _apply_model_controls(self) -> None:
+        thresholds = self._category_thresholds()
+        self.settings_bar.set_threshold_visible(thresholds is None)
+        self.tag_panel.set_categories(
+            TaggerService.info(self.tagger.model).categories, self.settings.enabled_categories, thresholds
+        )
+
+    def _refresh_tags(self) -> None:
+        """Re-filter the last prediction with the current thresholds and categories."""
+        self.tags = (
+            self.prediction.select(self._thresholds(), self.settings.enabled_categories)
+            if self.prediction is not None
+            else []
+        )
+        self.tag_panel.set_tags(self.tags)
+        self.page.update()
+
     def _save_settings(self) -> None:
         try:
             self.store.save(self.settings)
@@ -251,20 +295,22 @@ class BooruVisionApp:
             return
         if self.busy:
             return
-        self._set_busy(True, f"Analyzing with {self.tagger.model}…")
+        message = f"Analyzing with {self.tagger.model}…"
+        if not self.tagger.is_loaded():
+            message = f"Loading {self.tagger.model} (downloaded on first use)…"
+        self._set_busy(True, message)
         try:
-            tags = await asyncio.to_thread(self.tagger.tag, self.image)
+            self.prediction = await asyncio.to_thread(self.tagger.predict, self.image)
         except Exception as e:
             log.exception("Analysis failed")
             self._snack(f"Analysis failed: {e}")
         else:
-            self.tags = tags
-            self.tag_panel.set_tags(tags)
+            self._refresh_tags()
         finally:
             self._set_busy(False)
 
     async def copy_tags(self) -> None:
-        text = join_tags(self.tags, self.settings.tag_format, self.settings.comma_separated)
+        text = join_tags([t.name for t in self.tags], self.settings.tag_format, self.settings.comma_separated)
         await ft.Clipboard().set(text)
         self._snack(f"Copied {len(self.tags)} tags")
 
@@ -283,11 +329,39 @@ class BooruVisionApp:
         await asyncio.to_thread(self.tagger.set_model, model)
         self.settings.model = model
         self._save_settings()
+        # The last result came from the previous model and doesn't match its thresholds
+        self.prediction = None
+        self._apply_model_controls()
+        self._refresh_tags()
 
     def change_threshold(self, threshold: float) -> None:
-        self.tagger.threshold = threshold
         self.settings.threshold = threshold
         self._save_settings()
+        self._refresh_tags()
+
+    def toggle_category(self, category: Category, enabled: bool) -> None:
+        if enabled:
+            self.settings.enabled_categories.add(category)
+        else:
+            self.settings.enabled_categories.discard(category)
+        self._save_settings()
+        self._refresh_tags()
+
+    def change_category_threshold(self, category: Category, threshold: float) -> None:
+        overrides = self.settings.category_thresholds.setdefault(self.tagger.model, {})
+        defaults = TaggerService.info(self.tagger.model).default_thresholds or {}
+        if threshold == defaults.get(category):
+            overrides.pop(category, None)
+        else:
+            overrides[category] = threshold
+        self._save_settings()
+        self._refresh_tags()
+
+    def reset_category_thresholds(self) -> None:
+        self.settings.category_thresholds.pop(self.tagger.model, None)
+        self._save_settings()
+        self._apply_model_controls()
+        self._refresh_tags()
 
     def change_unload(self, unload: bool) -> None:
         self.tagger.unload_after = unload

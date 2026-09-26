@@ -14,6 +14,6 @@ def test_stable_diffusion_format_escapes_parentheses():
 
 
 def test_join_tags_keeps_order_and_separator():
-    tags = {"1girl": 0.99, "long_hair": 0.8}
+    tags = ["1girl", "long_hair"]
     assert join_tags(tags, TagFormat.BOORU, comma_separated=False) == "1girl long_hair"
     assert join_tags(tags, TagFormat.STABLE_DIFFUSION, comma_separated=True) == "1girl, long hair"

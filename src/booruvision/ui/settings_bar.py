@@ -43,6 +43,8 @@ class SettingsBar:
             on_change=self._handle_threshold_preview,
             on_change_end=self._handle_threshold,
         )
+        # Hidden for models with per-category thresholds, which are set in the tag panel
+        self._threshold_column = ft.Column([self._threshold_label, self._threshold], spacing=0, tight=True)
         self._shortcut = ft.Text(shortcut, weight=ft.FontWeight.BOLD)
         self._shortcut_button = ft.TextButton(
             content=ft.Row([ft.Text("Shortcut:"), self._shortcut], tight=True),
@@ -63,7 +65,7 @@ class SettingsBar:
                         ft.Row(
                             [
                                 self._model,
-                                ft.Column([self._threshold_label, self._threshold], spacing=0, tight=True),
+                                self._threshold_column,
                             ],
                             tight=True,
                             spacing=16,
@@ -90,6 +92,9 @@ class SettingsBar:
     @staticmethod
     def _threshold_text(value: float) -> str:
         return f"Threshold: {value:.2f}"
+
+    def set_threshold_visible(self, visible: bool) -> None:
+        self._threshold_column.visible = visible
 
     def set_shortcut(self, shortcut: str) -> None:
         self._shortcut.value = shortcut

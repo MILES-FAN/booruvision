@@ -1,5 +1,6 @@
 """Tag output formats."""
 
+from collections.abc import Iterable
 from enum import StrEnum
 
 
@@ -21,10 +22,6 @@ def format_tag(tag: str, fmt: TagFormat) -> str:
     return tag
 
 
-def format_tags(tags: dict[str, float], fmt: TagFormat) -> dict[str, float]:
-    return {format_tag(tag, fmt): confidence for tag, confidence in tags.items()}
-
-
-def join_tags(tags: dict[str, float], fmt: TagFormat, comma_separated: bool) -> str:
+def join_tags(tags: Iterable[str], fmt: TagFormat, comma_separated: bool) -> str:
     separator = ", " if comma_separated else " "
-    return separator.join(format_tags(tags, fmt))
+    return separator.join(format_tag(tag, fmt) for tag in tags)
