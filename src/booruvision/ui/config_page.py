@@ -1,4 +1,4 @@
-"""Config page: edit the global shortcut combination."""
+"""Settings page: interface language and the global shortcut combination."""
 
 import sys
 from collections.abc import Awaitable, Callable
@@ -6,6 +6,7 @@ from collections.abc import Awaitable, Callable
 import flet as ft
 
 from booruvision.hotkeys import MODIFIER_ORDER, SUPPORTED_KEYS, Hotkey, HotkeyError, Modifier
+from booruvision.i18n import AUTO, LANGUAGES, detect_system_language, t
 
 CONFIG_ROUTE = "/config"
 DEFAULT_SHORTCUT = "Ctrl+Shift+I"
@@ -54,10 +55,13 @@ class ConfigPage:
         self,
         page: ft.Page,
         shortcut: str,
+        language: str,
         on_apply: Callable[[str], Awaitable[bool]],
+        on_language_change: Callable[[str], None],
     ) -> None:
         self.page = page
         self._on_apply = on_apply
+        self._on_language_change = on_language_change
         self._current = Hotkey.parse(shortcut)
         self.recording = False
 
@@ -65,8 +69,21 @@ class ConfigPage:
         self._modifier_boxes = {
             m: ft.Checkbox(label=_MODIFIER_LABELS[m], on_change=self._on_field_change) for m in MODIFIER_ORDER
         }
+        self._language = ft.Dropdown(
+            label=t("settings.language"),
+            value=language,
+            options=[
+                ft.DropdownOption(
+                    key=AUTO, text=t("settings.language_auto", language=LANGUAGES[detect_system_language()])
+                ),
+                *(ft.DropdownOption(key=code, text=name) for code, name in LANGUAGES.items()),
+            ],
+            on_select=self._handle_language,
+            dense=True,
+            width=240,
+        )
         self._key = ft.Dropdown(
-            label="Key",
+            label=t("settings.key"),
             options=[ft.DropdownOption(key=k, text=k) for k in SUPPORTED_KEYS],
             on_select=self._on_field_change,
             enable_filter=True,
@@ -76,10 +93,12 @@ class ConfigPage:
         )
         self._preview = ft.Text()
         self._record_button = ft.OutlinedButton(
-            content="Record", icon=ft.Icons.FIBER_MANUAL_RECORD, on_click=self._toggle_recording
+            content=t("settings.record"), icon=ft.Icons.FIBER_MANUAL_RECORD, on_click=self._toggle_recording
         )
-        self._apply_button = ft.FilledButton(content="Apply", icon=ft.Icons.CHECK, on_click=self._apply)
-        self._reset_button = ft.TextButton(content="Reset to default", on_click=self._reset)
+        self._apply_button = ft.FilledButton(
+            content=t("settings.apply"), icon=ft.Icons.CHECK, on_click=self._apply
+        )
+        self._reset_button = ft.TextButton(content=t("settings.reset_default"), on_click=self._reset)
         self._status = ft.Text(color=ft.Colors.ON_SURFACE_VARIANT, visible=False)
         self._editor = ft.Column(
             [
@@ -95,15 +114,18 @@ class ConfigPage:
             spacing=12,
         )
 
-        hint = "Press the shortcut anywhere to load the clipboard image and analyze it."
+        hint = t("settings.shortcut_hint")
         if sys.platform == "darwin":
-            hint += " Ctrl is the Control key, not Cmd."
+            hint += " " + t("settings.shortcut_hint_mac")
         self._body = ft.Column(
             [
-                ft.Text("Global shortcut", theme_style=ft.TextThemeStyle.TITLE_LARGE),
+                self._language,
+                ft.Divider(),
+                ft.Text(t("settings.shortcut_title"), theme_style=ft.TextThemeStyle.TITLE_LARGE),
                 ft.Text(hint, color=ft.Colors.ON_SURFACE_VARIANT),
                 ft.Row(
-                    [ft.Text("Current:"), self._current_text], vertical_alignment=ft.CrossAxisAlignment.CENTER
+                    [ft.Text(t("settings.current")), self._current_text],
+                    vertical_alignment=ft.CrossAxisAlignment.CENTER,
                 ),
                 self._status,
                 ft.Divider(),
@@ -120,12 +142,12 @@ class ConfigPage:
     def view(self) -> ft.View:
         return ft.View(
             route=CONFIG_ROUTE,
-            appbar=ft.AppBar(title=ft.Text("Settings")),
+            appbar=ft.AppBar(title=ft.Text(t("settings.title"))),
             controls=[ft.Container(self._body, padding=16, expand=True)],
         )
 
-    def set_hotkey_status(self, message: str | None, *, enabled: bool) -> None:
-        self._status.value = message or ""
+    def set_hotkey_status(self, message: object | None, *, enabled: bool) -> None:
+        self._status.value = str(message or "")
         self._status.visible = bool(message)
         self._editor.disabled = not enabled
         if not enabled:
@@ -173,9 +195,16 @@ class ConfigPage:
             self._apply_button.disabled = True
             return
         changed = hotkey != self._current
-        self._preview.value = f"New shortcut: {display_shortcut(hotkey)}" if changed else "No changes"
+        self._preview.value = (
+            t("settings.new_shortcut", shortcut=display_shortcut(hotkey))
+            if changed
+            else t("settings.no_changes")
+        )
         self._preview.color = None
         self._apply_button.disabled = not changed
+
+    def _handle_language(self, e: ft.Event[ft.Dropdown]) -> None:
+        self._on_language_change(e.control.value or AUTO)
 
     def _on_field_change(self, _) -> None:
         self._refresh_preview()
@@ -187,16 +216,16 @@ class ConfigPage:
             self._stop_recording()
         else:
             self.recording = True
-            self._record_button.content = "Cancel"
+            self._record_button.content = t("settings.cancel")
             self._record_button.icon = ft.Icons.STOP
-            self._preview.value = "Press the new key combination…"
+            self._preview.value = t("settings.press_keys")
             self._preview.color = ft.Colors.PRIMARY
 
     def _stop_recording(self) -> None:
         if not self.recording:
             return
         self.recording = False
-        self._record_button.content = "Record"
+        self._record_button.content = t("settings.record")
         self._record_button.icon = ft.Icons.FIBER_MANUAL_RECORD
         self._refresh_preview()
 

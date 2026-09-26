@@ -4,6 +4,8 @@ from collections.abc import Awaitable, Callable
 
 import flet as ft
 
+from booruvision.i18n import t
+
 
 class SettingsBar:
     def __init__(
@@ -24,7 +26,7 @@ class SettingsBar:
         self._on_open_config = on_open_config
 
         self._model = ft.Dropdown(
-            label="Model",
+            label=t("bar.model"),
             value=model,
             options=[ft.DropdownOption(key=m, text=m) for m in models],
             on_select=self._handle_model,
@@ -47,14 +49,12 @@ class SettingsBar:
         self._threshold_column = ft.Column([self._threshold_label, self._threshold], spacing=0, tight=True)
         self._shortcut = ft.Text(shortcut, weight=ft.FontWeight.BOLD)
         self._shortcut_button = ft.TextButton(
-            content=ft.Row([ft.Text("Shortcut:"), self._shortcut], tight=True),
+            content=ft.Row([ft.Text(t("bar.shortcut")), self._shortcut], tight=True),
             icon=ft.Icons.KEYBOARD,
-            tooltip="Change global shortcut",
+            tooltip=t("bar.shortcut_tooltip"),
             on_click=self._handle_open_config,
         )
-        self._unload = ft.Checkbox(
-            label="Unload model after every analysis", value=unload_after, on_change=self._handle_unload
-        )
+        self._unload = ft.Checkbox(label=t("bar.unload"), value=unload_after, on_change=self._handle_unload)
         self._hotkey_status = ft.Text("", size=12, color=ft.Colors.ON_SURFACE_VARIANT, visible=False)
 
         self.view = ft.Column(
@@ -91,7 +91,7 @@ class SettingsBar:
 
     @staticmethod
     def _threshold_text(value: float) -> str:
-        return f"Threshold: {value:.2f}"
+        return t("bar.threshold", value=f"{value:.2f}")
 
     def set_threshold_visible(self, visible: bool) -> None:
         self._threshold_column.visible = visible
@@ -99,8 +99,8 @@ class SettingsBar:
     def set_shortcut(self, shortcut: str) -> None:
         self._shortcut.value = shortcut
 
-    def set_hotkey_status(self, message: str | None) -> None:
-        self._hotkey_status.value = message or ""
+    def set_hotkey_status(self, message: object | None) -> None:
+        self._hotkey_status.value = str(message or "")
         self._hotkey_status.visible = bool(message)
 
     async def _handle_model(self, e: ft.Event[ft.Dropdown]) -> None:

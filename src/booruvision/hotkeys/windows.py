@@ -13,6 +13,7 @@ from concurrent.futures import Future
 from ctypes import wintypes
 
 from booruvision.hotkeys.base import Hotkey, HotkeyBackend, HotkeyCallback, HotkeyError, Modifier
+from booruvision.i18n import Msg
 
 log = logging.getLogger(__name__)
 
@@ -115,7 +116,7 @@ class WindowsHotkeyBackend(HotkeyBackend):
 
     def _call(self, fn):
         if not self._thread.is_alive():
-            raise HotkeyError("Hotkey thread is not running")
+            raise HotkeyError(Msg("hotkey.thread_not_running"))
         future: Future = Future()
         self._ops.put((fn, future))
         user32.PostThreadMessageW(self._thread_id, WM_APP_WAKE, 0, 0)
@@ -134,8 +135,8 @@ class WindowsHotkeyBackend(HotkeyBackend):
             if not user32.RegisterHotKey(None, HOTKEY_ID, flags, vk):
                 error = ctypes.get_last_error()
                 if error == ERROR_HOTKEY_ALREADY_REGISTERED:
-                    raise HotkeyError(f"{hotkey} is already used by another application")
-                raise HotkeyError(f"RegisterHotKey failed for {hotkey} (error {error})")
+                    raise HotkeyError(Msg("hotkey.in_use", hotkey=hotkey))
+                raise HotkeyError(Msg("hotkey.register_failed", hotkey=hotkey, error=error))
             self._registered = True
             self._callback = callback
 

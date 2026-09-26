@@ -17,6 +17,7 @@ from dbus_next import BusType, Message, MessageType, Variant
 from dbus_next.aio import MessageBus
 
 from booruvision.hotkeys.base import Hotkey, HotkeyBackend, HotkeyCallback, HotkeyError, Modifier
+from booruvision.i18n import Msg
 
 log = logging.getLogger(__name__)
 
@@ -92,10 +93,7 @@ class WaylandPortalHotkeyBackend(HotkeyBackend):
 
         introspection = await self._bus.introspect(PORTAL_BUS, PORTAL_PATH)
         if not any(i.name == SHORTCUTS_IFACE for i in introspection.interfaces):
-            raise HotkeyError(
-                "This desktop's xdg-desktop-portal has no GlobalShortcuts support "
-                "(needs KDE Plasma or GNOME 48+)."
-            )
+            raise HotkeyError(Msg("hotkey.portal_unsupported"))
         proxy = self._bus.get_proxy_object(PORTAL_BUS, PORTAL_PATH, introspection)
         self._shortcuts = proxy.get_interface(SHORTCUTS_IFACE)
         self._shortcuts.on_activated(self._on_activated)
@@ -152,7 +150,7 @@ class WaylandPortalHotkeyBackend(HotkeyBackend):
         finally:
             self._pending.pop(path, None)
         if response != 0:
-            raise HotkeyError("The shortcut request was cancelled or denied")
+            raise HotkeyError(Msg("hotkey.portal_denied"))
         return results
 
     async def _close_session(self) -> None:
@@ -198,13 +196,10 @@ class WaylandPortalHotkeyBackend(HotkeyBackend):
         except HotkeyError:
             raise
         except Exception as e:
-            raise HotkeyError(f"GlobalShortcuts portal error: {e}") from e
+            raise HotkeyError(Msg("hotkey.portal_error", error=e)) from e
 
         self._callback = callback
-        self.status_message = (
-            f"Shortcut managed by your desktop: {trigger or 'not assigned yet'}. "
-            "Change it in the system keyboard shortcut settings."
-        )
+        self.status_message = Msg("hotkey.portal_managed", trigger=trigger or Msg("hotkey.portal_unassigned"))
         log.info("Bound portal shortcut, trigger: %s", trigger)
 
     def unregister(self) -> None:

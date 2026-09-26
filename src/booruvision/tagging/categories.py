@@ -2,6 +2,8 @@
 
 from enum import StrEnum
 
+from booruvision.i18n import t
+
 
 class Category(StrEnum):
     GENERAL = "general"
@@ -14,7 +16,7 @@ class Category(StrEnum):
 
     @property
     def label(self) -> str:
-        return "Style (artist)" if self is Category.STYLE else self.value.capitalize()
+        return t(f"category.{self.value}")
 
 
 # (light theme, dark theme) colors, taken from danbooru.donmai.us. Ratings have no Danbooru

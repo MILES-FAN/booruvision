@@ -5,6 +5,8 @@ from collections.abc import Callable, Iterable
 from dataclasses import dataclass
 from enum import StrEnum
 
+from booruvision.i18n import Msg
+
 HotkeyCallback = Callable[[], None]
 
 
@@ -52,23 +54,23 @@ class Hotkey:
         modifiers = frozenset(modifiers)
         key = key.strip().upper()
         if not modifiers:
-            raise HotkeyError("A global hotkey needs at least one modifier")
+            raise HotkeyError(Msg("hotkey.needs_modifier"))
         if key not in _SUPPORTED_KEYS:
-            raise HotkeyError(f"Unsupported key {key!r}: use A-Z, 0-9 or F1-F24")
+            raise HotkeyError(Msg("hotkey.unsupported_key", key=key))
         return cls(modifiers, key)
 
     @classmethod
     def parse(cls, text: str) -> "Hotkey":
         parts = [p.strip() for p in text.split("+")]
         if len(parts) < 2 or any(not p for p in parts):
-            raise HotkeyError(f"Invalid hotkey {text!r}: expected e.g. 'Ctrl+Shift+I'")
+            raise HotkeyError(Msg("hotkey.invalid", text=text))
 
         *mod_parts, key = parts
         modifiers = set()
         for part in mod_parts:
             modifier = _MODIFIER_ALIASES.get(part.lower())
             if modifier is None:
-                raise HotkeyError(f"Invalid hotkey {text!r}: unknown modifier {part!r}")
+                raise HotkeyError(Msg("hotkey.unknown_modifier", text=text, modifier=part))
             modifiers.add(modifier)
 
         return cls.create(modifiers, key)
@@ -89,7 +91,8 @@ class HotkeyBackend(ABC):
     name: str = "unknown"
 
     def __init__(self) -> None:
-        self.status_message: str | None = None
+        # Why the hotkey is unavailable or how it is managed; a Msg is translated when shown
+        self.status_message: str | Msg | None = None
 
     @property
     def available(self) -> bool:

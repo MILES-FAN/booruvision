@@ -9,6 +9,7 @@ from pathlib import Path
 from platformdirs import user_config_path
 
 from booruvision.formatting import TagFormat
+from booruvision.i18n import AUTO, LANGUAGES
 from booruvision.tagging.categories import DEFAULT_ENABLED, Category
 from booruvision.tagging.models import DEFAULT_MODEL
 
@@ -27,6 +28,8 @@ def default_config_path() -> Path:
 @dataclass
 class Settings:
     shortcut: str = "Ctrl+Shift+I"
+    # "auto" (follow the system) or a code from i18n.LANGUAGES
+    language: str = AUTO
     unload_model_when_done: bool = False
     tag_format: TagFormat = TagFormat.BOORU
     comma_separated: bool = False
@@ -77,6 +80,8 @@ class ConfigStore:
             gui = parser["GUI"] if parser.has_section("GUI") else {}
             tagger = parser["Tagger"] if parser.has_section("Tagger") else {}
             settings.shortcut = gui.get("shortcut", settings.shortcut)
+            if (language := gui.get("language", settings.language)) in (AUTO, *LANGUAGES):
+                settings.language = language
             if "unload_model_when_done" in gui:
                 settings.unload_model_when_done = parser.getboolean("GUI", "unload_model_when_done")
             if "comma_separated" in gui:
@@ -102,6 +107,7 @@ class ConfigStore:
         parser = configparser.ConfigParser()
         parser["GUI"] = {
             "shortcut": settings.shortcut,
+            "language": settings.language,
             "unload_model_when_done": str(settings.unload_model_when_done),
             "tag_format": settings.tag_format.value,
             "comma_separated": str(settings.comma_separated),

@@ -11,6 +11,7 @@ import threading
 import Quartz
 
 from booruvision.hotkeys.base import Hotkey, HotkeyBackend, HotkeyCallback, HotkeyError, Modifier
+from booruvision.i18n import Msg
 
 log = logging.getLogger(__name__)
 
@@ -37,10 +38,7 @@ _RELEVANT_FLAGS = 0
 for _flag in _MODIFIER_FLAGS.values():
     _RELEVANT_FLAGS |= _flag
 
-PERMISSION_MESSAGE = (
-    "Global hotkey needs the Input Monitoring permission. Enable BooruVision (or your terminal) in "
-    "System Settings → Privacy & Security → Input Monitoring, then restart the app."
-)
+PERMISSION_MESSAGE = Msg("hotkey.macos_permission")
 
 
 class MacHotkeyBackend(HotkeyBackend):
@@ -54,7 +52,7 @@ class MacHotkeyBackend(HotkeyBackend):
         self._run_loop = None
         self._tap = None
         self._started = threading.Event()
-        self._start_error: str | None = None
+        self._start_error: Msg | None = None
         # pyobjc must keep a reference to the Python callback for the tap's lifetime
         self._tap_callback = self._on_event
 
@@ -129,7 +127,7 @@ class MacHotkeyBackend(HotkeyBackend):
     def register(self, hotkey: Hotkey, callback: HotkeyCallback) -> None:
         keycode = _KEYCODES.get(hotkey.key)
         if keycode is None:
-            raise HotkeyError(f"{hotkey.key} is not supported on macOS")
+            raise HotkeyError(Msg("hotkey.key_unsupported_macos", key=hotkey.key))
         flags = 0
         for modifier in hotkey.modifiers:
             flags |= _MODIFIER_FLAGS[modifier]

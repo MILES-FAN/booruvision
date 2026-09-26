@@ -5,6 +5,8 @@ import io
 import flet as ft
 from PIL import Image
 
+from booruvision.i18n import t
+
 # Longest edge of the preview sent to the client; the model gets the full image
 PREVIEW_MAX_EDGE = 1600
 
@@ -25,7 +27,7 @@ class ImagePanel:
             [
                 ft.Icon(ft.Icons.IMAGE_OUTLINED, size=48, color=ft.Colors.ON_SURFACE_VARIANT),
                 ft.Text(
-                    "Load an image from the clipboard or a file",
+                    t("image.placeholder"),
                     color=ft.Colors.ON_SURFACE_VARIANT,
                     text_align=ft.TextAlign.CENTER,
                 ),

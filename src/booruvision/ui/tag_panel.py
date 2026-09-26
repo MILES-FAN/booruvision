@@ -5,6 +5,7 @@ from collections.abc import Callable
 import flet as ft
 
 from booruvision.formatting import TagFormat, format_tag
+from booruvision.i18n import t
 from booruvision.tagging.categories import Category, category_color
 from booruvision.tagging.prediction import TagResult
 
@@ -43,24 +44,24 @@ class TagPanel:
         self._on_category_toggle = on_category_toggle
         self._on_category_threshold = on_category_threshold
 
-        self._title = ft.Text("Tags", theme_style=ft.TextThemeStyle.TITLE_MEDIUM)
+        self._title = ft.Text(t("tags.title"), theme_style=ft.TextThemeStyle.TITLE_MEDIUM)
         self._categories_row = ft.Row(
             wrap=True, spacing=12, run_spacing=4, vertical_alignment=ft.CrossAxisAlignment.CENTER
         )
         self._reset_button = ft.TextButton(
-            content="Reset",
+            content=t("tags.reset"),
             icon=ft.Icons.RESTART_ALT,
-            tooltip="Restore the recommended thresholds",
+            tooltip=t("tags.reset_tooltip"),
             on_click=lambda _: on_reset_thresholds(),
         )
         self._list = ft.ListView(expand=True, spacing=2)
-        self._empty = ft.Text("No results yet", color=ft.Colors.ON_SURFACE_VARIANT)
+        self._empty = ft.Text(t("tags.empty"), color=ft.Colors.ON_SURFACE_VARIANT)
 
         self.copy_button = ft.FilledButton(
-            content="Copy tags", icon=ft.Icons.CONTENT_COPY, on_click=lambda _: on_copy(), disabled=True
+            content=t("tags.copy"), icon=ft.Icons.CONTENT_COPY, on_click=lambda _: on_copy(), disabled=True
         )
         self._format_dropdown = ft.Dropdown(
-            label="Tag format",
+            label=t("tags.format"),
             value=tag_format.value,
             options=[ft.DropdownOption(key=f.value, text=f.value) for f in TagFormat],
             on_select=self._handle_format,
@@ -68,7 +69,7 @@ class TagPanel:
             width=200,
         )
         self._comma_checkbox = ft.Checkbox(
-            label="Use , as separator", value=comma_separated, on_change=self._handle_separator
+            label=t("tags.comma"), value=comma_separated, on_change=self._handle_separator
         )
 
         self._list_box = ft.Container(
@@ -149,14 +150,14 @@ class TagPanel:
                     text_align=ft.TextAlign.RIGHT,
                     keyboard_type=ft.KeyboardType.NUMBER,
                     input_filter=ft.InputFilter(r"[0-9.]"),
-                    tooltip=f"{category.label} threshold",
+                    tooltip=t("tags.threshold_tooltip", category=category.label),
                     on_submit=self._handle_threshold,
                     on_blur=self._handle_threshold,
                 )
                 controls.append(ft.Row([checkbox, field], tight=True, spacing=6))
             else:
                 # e.g. PixAI v0.9 copyright tags, derived from the detected characters
-                checkbox.tooltip = "Derived from the detected characters"
+                checkbox.tooltip = t("tags.derived_tooltip")
                 controls.append(checkbox)
         if self._thresholds is not None:
             controls.append(self._reset_button)
@@ -178,7 +179,9 @@ class TagPanel:
             )
             for result in self._results
         ]
-        self._title.value = f"Tags ({len(self._results)})" if self._results else "Tags"
+        self._title.value = (
+            t("tags.title_count", count=len(self._results)) if self._results else t("tags.title")
+        )
         self._empty.visible = not self._results
         self.copy_button.disabled = not self._results
 

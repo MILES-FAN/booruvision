@@ -95,3 +95,12 @@ def test_categories_fall_back_to_defaults_when_none_are_valid(tmp_path):
     path.write_text("[GUI]\ncategories = nonsense\n")
     settings = ConfigStore(path, legacy_path=tmp_path / "none.ini").load()
     assert settings.enabled_categories == set(DEFAULT_ENABLED)
+
+
+def test_language_round_trip_and_invalid_value(tmp_path):
+    store = ConfigStore(tmp_path / "config.ini", legacy_path=tmp_path / "none.ini")
+    store.save(Settings(language="ja"))
+    assert store.load().language == "ja"
+
+    store.path.write_text("[GUI]\nlanguage = klingon\n")
+    assert store.load().language == "auto"

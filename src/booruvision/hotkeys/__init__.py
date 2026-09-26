@@ -20,6 +20,7 @@ from booruvision.hotkeys.base import (
     Modifier,
 )
 from booruvision.hotkeys.null import NullHotkeyBackend
+from booruvision.i18n import Msg
 
 log = logging.getLogger(__name__)
 
@@ -65,9 +66,9 @@ def create_backend() -> HotkeyBackend:
                 from booruvision.hotkeys.linux_x11 import X11HotkeyBackend
 
                 return X11HotkeyBackend()
-            return NullHotkeyBackend("No X11 or Wayland display found; global hotkeys are disabled.")
+            return NullHotkeyBackend(Msg("hotkey.no_display"))
 
-        return NullHotkeyBackend(f"Global hotkeys are not supported on {sys.platform}.")
+        return NullHotkeyBackend(Msg("hotkey.unsupported_platform", platform=sys.platform))
     except Exception as e:  # noqa: BLE001 - any backend failure must not break the app
         log.exception("Failed to initialise hotkey backend")
-        return NullHotkeyBackend(f"Global hotkeys unavailable: {e}")
+        return NullHotkeyBackend(Msg("hotkey.unavailable", error=e))

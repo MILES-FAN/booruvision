@@ -1,4 +1,5 @@
 from booruvision.hotkeys.base import Hotkey, HotkeyBackend, HotkeyCallback
+from booruvision.i18n import Msg
 
 
 class NullHotkeyBackend(HotkeyBackend):
@@ -6,7 +7,7 @@ class NullHotkeyBackend(HotkeyBackend):
 
     name = "none"
 
-    def __init__(self, reason: str) -> None:
+    def __init__(self, reason: str | Msg) -> None:
         super().__init__()
         self.status_message = reason
 

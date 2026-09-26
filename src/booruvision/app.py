@@ -12,6 +12,7 @@ from booruvision import clipboard
 from booruvision.config import ConfigStore, Settings
 from booruvision.formatting import TagFormat, join_tags
 from booruvision.hotkeys import Hotkey, HotkeyBackend, HotkeyError, create_backend
+from booruvision.i18n import AUTO, Msg, match_language, resolve_language, set_language, t
 from booruvision.tagging import TaggerService
 from booruvision.tagging.categories import Category
 from booruvision.tagging.models import DEFAULT_MODEL
@@ -48,6 +49,8 @@ class BooruVisionApp:
             log.warning("%s, using %s", e, DEFAULT_SHORTCUT)
             self.settings.shortcut = DEFAULT_SHORTCUT
 
+        set_language(resolve_language(self.settings.language))
+
         self.tagger = TaggerService(
             model=self.settings.model,
             unload_after=self.settings.unload_model_when_done,
@@ -58,7 +61,13 @@ class BooruVisionApp:
         self.prediction: Prediction | None = None
         self.tags: list[TagResult] = []
         self.busy = False
+        self._busy_message: Msg | None = None
+        self._create_ui()
 
+    # ---- setup -------------------------------------------------------------
+
+    def _create_ui(self) -> None:
+        """Create every control with the current language. Called again when it changes."""
         self.image_panel = ImagePanel()
         self.tag_panel = TagPanel(
             tag_format=self.settings.tag_format,
@@ -82,16 +91,25 @@ class BooruVisionApp:
             on_open_config=self.open_config,
         )
         self._apply_model_controls()
-        self.config_page = ConfigPage(page, shortcut=self.settings.shortcut, on_apply=self.change_shortcut)
+        self.config_page = ConfigPage(
+            self.page,
+            shortcut=self.settings.shortcut,
+            language=self.settings.language,
+            on_apply=self.change_shortcut,
+            on_language_change=self.change_language,
+        )
 
         self.clipboard_button = ft.Button(
-            content="From clipboard", icon=ft.Icons.CONTENT_PASTE, on_click=self._on_clipboard_click
+            content=t("main.from_clipboard"), icon=ft.Icons.CONTENT_PASTE, on_click=self._on_clipboard_click
         )
         self.file_button = ft.Button(
-            content="From file", icon=ft.Icons.FOLDER_OPEN, on_click=self._on_file_click
+            content=t("main.from_file"), icon=ft.Icons.FOLDER_OPEN, on_click=self._on_file_click
         )
         self.analyze_button = ft.FilledButton(
-            content="Analyze", icon=ft.Icons.AUTO_AWESOME, on_click=self._on_analyze_click, disabled=True
+            content=t("main.analyze"),
+            icon=ft.Icons.AUTO_AWESOME,
+            on_click=self._on_analyze_click,
+            disabled=self.image is None,
         )
         self.progress = ft.ProgressRing(width=20, height=20, stroke_width=2, visible=False)
         self.status = ft.Text("", color=ft.Colors.ON_SURFACE_VARIANT)
@@ -114,8 +132,7 @@ class BooruVisionApp:
             expand=True,
         )
         self.panels = ft.Container(expand=True)
-
-    # ---- setup -------------------------------------------------------------
+        self.root = ft.Column([self.panels, ft.Divider(height=1), self.settings_bar.view], expand=True)
 
     def build(self) -> None:
         page = self.page
@@ -132,15 +149,19 @@ class BooruVisionApp:
         page.on_close = lambda _: self.hotkeys.stop()
         page.on_route_change = lambda _: self._on_route_change()
         page.on_view_pop = self._on_view_pop
-        page.on_keyboard_event = self.config_page.handle_key
+        # The config page is replaced when the language changes, so look it up on every event
+        page.on_keyboard_event = lambda e: self.config_page.handle_key(e)
         page.on_platform_brightness_change = lambda _: self._apply_brightness()
-        self._apply_brightness(update=False)
+        page.on_locale_change = self._on_locale_change
 
-        self.root = ft.Column([self.panels, ft.Divider(height=1), self.settings_bar.view], expand=True)
-        self._apply_layout()
-        page.add(self.root)
-        self._refresh_hotkey_status()
+        self._show_ui()
         page.run_task(self._register_initial_hotkey)
+
+    def _show_ui(self) -> None:
+        self._apply_brightness(update=False)
+        self._refresh_hotkey_status()
+        self.page.controls[:] = [self.root]
+        self._apply_layout()
 
     def _apply_layout(self) -> None:
         narrow = (self.page.width or 0) < NARROW_LAYOUT_WIDTH
@@ -180,7 +201,8 @@ class BooruVisionApp:
             await asyncio.to_thread(self.hotkeys.register, hotkey, self._on_hotkey)
         except (HotkeyError, TimeoutError) as e:
             log.warning("Could not register hotkey %s: %s", self.settings.shortcut, e)
-            self.hotkeys.status_message = str(e)
+            # Keep a Msg as is so it follows language changes
+            self.hotkeys.status_message = e.args[0] if isinstance(e, HotkeyError) and e.args else str(e)
         self._refresh_hotkey_status()
         self.page.update()
 
@@ -211,10 +233,11 @@ class BooruVisionApp:
     def _snack(self, message: str) -> None:
         self.page.show_dialog(ft.SnackBar(ft.Text(message)))
 
-    def _set_busy(self, busy: bool, message: str = "") -> None:
+    def _set_busy(self, busy: bool, message: Msg | None = None) -> None:
         self.busy = busy
+        self._busy_message = message
         self.progress.visible = busy
-        self.status.value = message
+        self.status.value = str(message or "")
         for button in (self.clipboard_button, self.file_button):
             button.disabled = busy
         self.analyze_button.disabled = busy or self.image is None
@@ -261,21 +284,21 @@ class BooruVisionApp:
             self.store.save(self.settings)
         except OSError as e:
             log.exception("Failed to save settings")
-            self._snack(f"Could not save settings: {e}")
+            self._snack(t("main.save_failed", error=e))
 
     # ---- actions ------------------------------------------------------------
 
     async def load_from_clipboard(self) -> bool:
         image = await clipboard.read_image()
         if image is None:
-            self._snack("The clipboard does not contain an image")
+            self._snack(t("main.clipboard_no_image"))
             return False
         self._set_image(image)
         return True
 
     async def load_from_file(self) -> None:
         files = await ft.FilePicker().pick_files(
-            dialog_title="Open image",
+            dialog_title=t("main.open_image"),
             file_type=ft.FilePickerFileType.CUSTOM,
             allowed_extensions=FILE_EXTENSIONS,
         )
@@ -284,35 +307,33 @@ class BooruVisionApp:
         try:
             image = await asyncio.to_thread(Image.open, files[0].path)
         except (UnidentifiedImageError, OSError) as e:
-            self.image_panel.show_error(f"Could not open image: {e}")
+            self.image_panel.show_error(t("main.open_failed", error=e))
             self.page.update()
             return
         self._set_image(image)
 
     async def analyze(self) -> None:
         if self.image is None:
-            self._snack("Load an image first")
+            self._snack(t("main.load_image_first"))
             return
         if self.busy:
             return
-        message = f"Analyzing with {self.tagger.model}…"
-        if not self.tagger.is_loaded():
-            message = f"Loading {self.tagger.model} (downloaded on first use)…"
-        self._set_busy(True, message)
+        key = "main.analyzing" if self.tagger.is_loaded() else "main.loading_model"
+        self._set_busy(True, Msg(key, model=self.tagger.model))
         try:
             self.prediction = await asyncio.to_thread(self.tagger.predict, self.image)
         except Exception as e:
             log.exception("Analysis failed")
-            self._snack(f"Analysis failed: {e}")
+            self._snack(t("main.analysis_failed", error=e))
         else:
             self._refresh_tags()
         finally:
             self._set_busy(False)
 
     async def copy_tags(self) -> None:
-        text = join_tags([t.name for t in self.tags], self.settings.tag_format, self.settings.comma_separated)
+        text = join_tags([r.name for r in self.tags], self.settings.tag_format, self.settings.comma_separated)
         await ft.Clipboard().set(text)
-        self._snack(f"Copied {len(self.tags)} tags")
+        self._snack(t("main.copied", count=len(self.tags)))
 
     async def analyze_clipboard_and_focus(self) -> None:
         if self.busy:
@@ -370,6 +391,27 @@ class BooruVisionApp:
         if unload and not self.busy:
             self.page.run_thread(self.tagger.unload)
 
+    def change_language(self, language: str) -> None:
+        self.settings.language = language
+        self._save_settings()
+        self._apply_language(resolve_language(language))
+
+    def _on_locale_change(self, e: ft.LocaleChangeEvent) -> None:
+        if self.settings.language == AUTO:
+            self._apply_language(match_language([locale.language_code for locale in e.locales]))
+
+    def _apply_language(self, code: str) -> None:
+        """Switch the UI language, keeping the loaded image, results and busy state."""
+        set_language(code)
+        self._create_ui()
+        if self.image is not None:
+            self.image_panel.show(self.image)
+        self.tag_panel.set_tags(self.tags)
+        self._set_busy(self.busy, self._busy_message)
+        self._show_ui()
+        # Rebuilds the settings view if it is open
+        self._on_route_change()
+
     def change_tag_format(self, tag_format: TagFormat) -> None:
         self.settings.tag_format = tag_format
         self._save_settings()
@@ -386,7 +428,7 @@ class BooruVisionApp:
             hotkey = Hotkey.parse(shortcut)
             await asyncio.to_thread(self.hotkeys.register, hotkey, self._on_hotkey)
         except (HotkeyError, TimeoutError) as e:
-            self._snack(f"Could not set shortcut: {e}")
+            self._snack(t("main.shortcut_failed", error=e))
             try:
                 await asyncio.to_thread(self.hotkeys.register, Hotkey.parse(old), self._on_hotkey)
             except (HotkeyError, TimeoutError):
@@ -395,7 +437,7 @@ class BooruVisionApp:
             self.settings.shortcut = str(hotkey)
             self.settings_bar.set_shortcut(display_shortcut(hotkey))
             self._save_settings()
-            self._snack(f"Global shortcut set to {hotkey}")
+            self._snack(t("main.shortcut_set", shortcut=display_shortcut(hotkey)))
             success = True
         self._refresh_hotkey_status()
         self.page.update()

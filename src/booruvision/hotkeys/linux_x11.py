@@ -16,6 +16,7 @@ from concurrent.futures import Future
 from Xlib import XK, X, display, error
 
 from booruvision.hotkeys.base import Hotkey, HotkeyBackend, HotkeyCallback, HotkeyError, Modifier
+from booruvision.i18n import Msg
 
 log = logging.getLogger(__name__)
 
@@ -95,7 +96,7 @@ class X11HotkeyBackend(HotkeyBackend):
 
     def _call(self, fn):
         if not self._thread.is_alive():
-            raise HotkeyError("Hotkey thread is not running")
+            raise HotkeyError(Msg("hotkey.thread_not_running"))
         future: Future = Future()
         self._ops.put((fn, future))
         os.write(self._wake_w, b"x")
@@ -119,7 +120,7 @@ class X11HotkeyBackend(HotkeyBackend):
             keysym = XK.string_to_keysym(hotkey.key.lower() if len(hotkey.key) == 1 else hotkey.key)
             keycode = self._display.keysym_to_keycode(keysym)
             if not keycode:
-                raise HotkeyError(f"No keycode for {hotkey.key} in the current keyboard layout")
+                raise HotkeyError(Msg("hotkey.no_keycode", key=hotkey.key))
 
             self._ungrab()
             catcher = error.CatchError(error.BadAccess)
@@ -132,7 +133,7 @@ class X11HotkeyBackend(HotkeyBackend):
                 for locks in _LOCK_COMBINATIONS:
                     self._root.ungrab_key(keycode, mask | locks)
                 self._display.sync()
-                raise HotkeyError(f"{hotkey} is already grabbed by another application")
+                raise HotkeyError(Msg("hotkey.in_use", hotkey=hotkey))
 
             self._grab = (keycode, mask)
             self._callback = callback
