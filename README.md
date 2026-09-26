@@ -1,5 +1,7 @@
+**English** | [简体中文](docs/README.zh-CN.md) | [日本語](docs/README.ja.md)
+
 A GUI tool for labeling images from your clipboard or file system using WD tagger and PixAI tagger models.
-Runs on Windows, macOS and Linux (built with [Flet](https://flet.dev), so it scales correctly on any DPI).
+Runs on Windows, macOS and Linux (built with [Flet](https://flet.dev)).
 
 ---
 ## How to install and run
@@ -33,6 +35,8 @@ the app code runs, so it needs the path up front).
 The first analysis downloads the selected model from Hugging Face, so it takes a while.
 
 ## How to use
+![BooruVision interface](imgs/new_gui.png)
+
 1. Copy an image (or an image file in your file manager) to the clipboard, or pick a file
 2. Click `From clipboard` or `From file`
 3. Click `Analyze`, or press the global shortcut to load the clipboard and analyze it in one step
@@ -45,6 +49,8 @@ Changing a threshold or the ticked categories updates the list right away, witho
 image again.
 
 Extra:
+- The interface is available in English, Simplified Chinese and Japanese. It follows the system
+  language by default; change it on the settings page (click `Shortcut: …` in the bottom bar)
 - `Unload model after every analysis` saves memory, but every analysis has to reload the model
 - Tag format can be `Booru` or `Stable Diffusion`, with space or `, ` as the separator
 
@@ -77,6 +83,7 @@ A `config.ini` from an older version in the working directory is imported on fir
 ```ini
 [GUI]
 shortcut = Ctrl+Shift+I
+language = auto
 unload_model_when_done = False
 tag_format = Booru
 comma_separated = False
@@ -90,6 +97,8 @@ threshold = 0.35
 [Thresholds pixai-v1.0]
 general = 0.25
 ```
+
+`language` is `auto` (follow the system), `en`, `zh` or `ja`.
 
 Default model is `wd-swinv2-v3` and I also recommend these models:
 - `wd-swinv2-v3` (default, with overall good performance)

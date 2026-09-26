@@ -1,8 +1,9 @@
 # AGENTS.md
 
 BooruVision is a Flet 1.0 desktop app that tags images (clipboard or file) with WD tagger ONNX
-models, with a per-platform global hotkey. User-facing docs live in `README.md`; this file is for
-contributors and coding agents.
+models, with a per-platform global hotkey. User-facing docs live in `README.md`, with Chinese and
+Japanese translations in `docs/README.zh-CN.md` and `docs/README.ja.md`; keep all three in sync.
+This file is for contributors and coding agents.
 
 ## Commands
 
@@ -38,6 +39,7 @@ src/booruvision/
   formatting.py            TagFormat (Booru / Stable Diffusion), joining with separators
   clipboard.py             clipboard image: ft.Clipboard first, Pillow ImageGrab fallback
   devclient.py             macOS-only branded dev client (see above)
+  i18n/                    t() / Msg, language detection; en.py, zh_hans.py, ja.py catalogs
   ui/                      image_panel, tag_panel, settings_bar, config_page (/config route)
   tagging/                 interrogators, preprocessing, model registry, Prediction, TaggerService
   hotkeys/                 base.py (Hotkey, HotkeyBackend) + one backend per platform
@@ -77,6 +79,12 @@ tests/                     pytest; pythonpath = src
 - **Config compatibility.** Keep the existing `config.ini` keys (`[GUI]` shortcut /
   unload_model_when_done / tag_format / comma_separated, `[Tagger]` model / threshold). Invalid
   values fall back to defaults. A legacy `./config.ini` is imported on first start.
+- **i18n.** User-facing text goes through `t("key", **params)` and must be added to all three
+  catalogs in `i18n/` (tests check that keys and placeholders match). Text created before it is
+  shown, such as `HotkeyError` messages and backend `status_message`, uses `Msg`, which is
+  translated when converted to a string. Changing the language rebuilds the UI through
+  `BooruVisionApp._create_ui`, so new controls must be created there and restore any state
+  they show. Tag names, model names and log messages stay in English.
 - **Layout.** Don't size anything in physical pixels or from screen resolution; Flet handles DPI.
   Below `NARROW_LAYOUT_WIDTH` the panels stack in a scrolling column with fixed heights. Flet has
   no min-height, and `expand` children are not allowed inside a scrolling column.
