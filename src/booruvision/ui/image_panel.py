@@ -43,6 +43,11 @@ class ImagePanel:
             padding=8,
         )
 
+    def set_height(self, height: int | None) -> None:
+        """Use a fixed height (for scrolling layouts), or None to fill the space."""
+        self.view.expand = height is None
+        self.view.height = height
+
     def show(self, image: Image.Image) -> None:
         self.view.content = ft.Image(src=preview_bytes(image), fit=ft.BoxFit.CONTAIN, gapless_playback=True)
 

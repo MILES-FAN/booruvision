@@ -18,8 +18,13 @@ Requires [uv](https://docs.astral.sh/uv/).
 
 ```bash
 uv sync                          # creates .venv and installs locked dependencies
-uv run flet run src/main.py      # start the app
+uv run python src/main.py        # start the app
 ```
+
+On macOS the first start creates a copy of the Flet client named and iconed as BooruVision
+in `.flet-client/`, so the Dock and menu bar show the right app. For hot reload use
+`FLET_VIEW_PATH=.flet-client uv run flet run src/main.py` (`flet run` opens the client before
+the app code runs, so it needs the path up front).
 
 The first analysis downloads the selected model from Hugging Face, so it takes a while.
 
@@ -55,7 +60,12 @@ Extra:
 - Tag format can be `Booru` or `Stable Diffusion`, with space or `, ` as the separator
 
 ## Global shortcut
-The default shortcut is `Ctrl+Shift+I`. How it works depends on the platform:
+The default shortcut is `Ctrl+Shift+I`. To change it, click `Shortcut: …` in the bottom bar to open
+the settings page, then either tick the modifiers and pick a key (A–Z, 0–9, F1–F24), or click
+`Record` and press the new combination. Click `Apply` to register it; if the combination is
+already taken, the previous shortcut is kept.
+
+How it works depends on the platform:
 
 | Platform | Mechanism | Notes |
 |---|---|---|
@@ -97,7 +107,7 @@ Default confidence threshold is `0.35`; lower it if you want more tags (less acc
 
 ## Project layout
 ```
-src/main.py                 entry point (used by `flet run` and `flet build`)
+src/main.py                 entry point (run directly, or via `flet run` / `flet build`)
 src/assets/                 app icon
 src/booruvision/
   app.py                    main window and event handling

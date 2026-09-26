@@ -2,6 +2,8 @@
 
 import asyncio
 import logging
+import sys
+from pathlib import Path
 
 import flet as ft
 from PIL import Image, UnidentifiedImageError
@@ -12,6 +14,7 @@ from booruvision.formatting import TagFormat, join_tags
 from booruvision.hotkeys import Hotkey, HotkeyBackend, HotkeyError, create_backend
 from booruvision.tagging import TaggerService
 from booruvision.tagging.models import DEFAULT_MODEL
+from booruvision.ui.config_page import CONFIG_ROUTE, DEFAULT_SHORTCUT, ConfigPage, display_shortcut
 from booruvision.ui.image_panel import ImagePanel
 from booruvision.ui.settings_bar import SettingsBar
 from booruvision.ui.tag_panel import TagPanel
@@ -21,7 +24,12 @@ log = logging.getLogger(__name__)
 APP_TITLE = "BooruVision"
 # Below this logical width the image and tag panels stack vertically
 NARROW_LAYOUT_WIDTH = 820
+# Panel heights in the narrow, scrolling layout
+NARROW_IMAGE_HEIGHT = 280
+NARROW_TAG_LIST_HEIGHT = 320
 FILE_EXTENSIONS = ["png", "jpg", "jpeg", "bmp", "gif", "webp"]
+# Window icon; only used on Windows (other platforms take the icon from the app bundle)
+WINDOW_ICON = Path(__file__).resolve().parent.parent / "assets" / "icon.ico"
 
 
 class BooruVisionApp:
@@ -32,6 +40,11 @@ class BooruVisionApp:
         if self.settings.model not in TaggerService.available_models():
             log.warning("Unknown model %r in config, using %s", self.settings.model, DEFAULT_MODEL)
             self.settings.model = DEFAULT_MODEL
+        try:
+            self.settings.shortcut = str(Hotkey.parse(self.settings.shortcut))
+        except HotkeyError as e:
+            log.warning("%s, using %s", e, DEFAULT_SHORTCUT)
+            self.settings.shortcut = DEFAULT_SHORTCUT
 
         self.tagger = TaggerService(
             model=self.settings.model,
@@ -55,13 +68,14 @@ class BooruVisionApp:
             models=TaggerService.available_models(),
             model=self.settings.model,
             threshold=self.settings.threshold,
-            shortcut=self.settings.shortcut,
+            shortcut=display_shortcut(Hotkey.parse(self.settings.shortcut)),
             unload_after=self.settings.unload_model_when_done,
             on_model_change=self.change_model,
             on_threshold_change=self.change_threshold,
-            on_shortcut_change=self.change_shortcut,
             on_unload_change=self.change_unload,
+            on_open_config=self.open_config,
         )
+        self.config_page = ConfigPage(page, shortcut=self.settings.shortcut, on_apply=self.change_shortcut)
 
         self.clipboard_button = ft.Button(
             content="From clipboard", icon=ft.Icons.CONTENT_PASTE, on_click=self._on_clipboard_click
@@ -105,11 +119,17 @@ class BooruVisionApp:
         page.window.height = 720
         page.window.min_width = 480
         page.window.min_height = 560
+        if sys.platform == "win32" and WINDOW_ICON.is_file():
+            page.window.icon = str(WINDOW_ICON)
         page.on_resize = lambda _: self._apply_layout()
         page.on_close = lambda _: self.hotkeys.stop()
+        page.on_route_change = lambda _: self._on_route_change()
+        page.on_view_pop = self._on_view_pop
+        page.on_keyboard_event = self.config_page.handle_key
 
+        self.root = ft.Column([self.panels, ft.Divider(height=1), self.settings_bar.view], expand=True)
         self._apply_layout()
-        page.add(ft.Column([self.panels, ft.Divider(height=1), self.settings_bar.view], expand=True))
+        page.add(self.root)
         self._refresh_hotkey_status()
         page.run_task(self._register_initial_hotkey)
 
@@ -118,12 +138,23 @@ class BooruVisionApp:
         if isinstance(self.panels.content, ft.Column if narrow else ft.Row):
             return
 
-        self.image_column.expand = 1 if narrow else 3
-        self.tag_panel.view.expand = 1 if narrow else 2
         children = [self.image_column, self.tag_panel.view]
         if narrow:
-            self.panels.content = ft.Column(children, expand=True, spacing=16)
+            # Stacked panels would split the remaining height and can squeeze the tag list
+            # to nothing, so give them fixed heights and let the whole page scroll instead.
+            self.root.scroll = ft.ScrollMode.AUTO
+            self.panels.expand = False
+            self.image_column.expand = False
+            self.image_panel.set_height(NARROW_IMAGE_HEIGHT)
+            self.tag_panel.set_list_height(NARROW_TAG_LIST_HEIGHT)
+            self.panels.content = ft.Column(children, spacing=16)
         else:
+            self.root.scroll = None
+            self.panels.expand = True
+            self.image_column.expand = 3
+            self.image_panel.set_height(None)
+            self.tag_panel.set_list_height(None)
+            self.tag_panel.view.expand = 2
             self.panels.content = ft.Row(
                 children, expand=True, spacing=16, vertical_alignment=ft.CrossAxisAlignment.STRETCH
             )
@@ -141,7 +172,25 @@ class BooruVisionApp:
 
     def _refresh_hotkey_status(self) -> None:
         enabled = self.hotkeys.available and self.hotkeys.configurable
-        self.settings_bar.set_hotkey_status(self.hotkeys.status_message, enabled=enabled)
+        self.settings_bar.set_hotkey_status(self.hotkeys.status_message)
+        self.config_page.set_hotkey_status(self.hotkeys.status_message, enabled=enabled)
+
+    # ---- navigation -----------------------------------------------------------
+
+    async def open_config(self) -> None:
+        await self.page.push_route(CONFIG_ROUTE)
+
+    def _on_route_change(self) -> None:
+        # views[0] is the main window; the config page is pushed on top of it
+        del self.page.views[1:]
+        if self.page.route == CONFIG_ROUTE:
+            self.page.views.append(self.config_page.view())
+        else:
+            self.config_page.on_leave()
+        self.page.update()
+
+    async def _on_view_pop(self, _) -> None:
+        await self.page.push_route("/")
 
     # ---- helpers ------------------------------------------------------------
 
@@ -255,28 +304,35 @@ class BooruVisionApp:
         self.settings.comma_separated = comma_separated
         self._save_settings()
 
-    async def change_shortcut(self, shortcut: str) -> None:
+    async def change_shortcut(self, shortcut: str) -> bool:
+        """Register `shortcut`, keeping the previous one on failure. Returns success."""
         old = self.settings.shortcut
+        success = False
         try:
             hotkey = Hotkey.parse(shortcut)
             await asyncio.to_thread(self.hotkeys.register, hotkey, self._on_hotkey)
         except (HotkeyError, TimeoutError) as e:
             self._snack(f"Could not set shortcut: {e}")
-            self.settings_bar.set_shortcut(old)
             try:
                 await asyncio.to_thread(self.hotkeys.register, Hotkey.parse(old), self._on_hotkey)
             except (HotkeyError, TimeoutError):
                 log.exception("Failed to restore previous hotkey %s", old)
         else:
             self.settings.shortcut = str(hotkey)
+            self.settings_bar.set_shortcut(display_shortcut(hotkey))
             self._save_settings()
+            self._snack(f"Global shortcut set to {hotkey}")
+            success = True
         self._refresh_hotkey_status()
         self.page.update()
+        return success
 
     # ---- event adapters --------------------------------------------------------
 
     def _on_hotkey(self) -> None:
         # Called on the hotkey backend's thread
+        if self.config_page.recording:
+            return
         self.page.run_task(self.analyze_clipboard_and_focus)
 
     async def _on_clipboard_click(self, _) -> None:

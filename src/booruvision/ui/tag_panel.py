@@ -40,28 +40,33 @@ class TagPanel:
             label="Use , as separator", value=comma_separated, on_change=self._handle_separator
         )
 
-        self.view = ft.Container(
-            content=ft.Column(
-                [
-                    self._title,
-                    ft.Container(
-                        content=ft.Stack([self._empty, self._list], expand=True),
-                        expand=True,
-                        border=ft.Border.all(1, ft.Colors.OUTLINE_VARIANT),
-                        border_radius=8,
-                        padding=8,
-                    ),
-                    ft.Row(
-                        [self._format_dropdown, self._comma_checkbox],
-                        wrap=True,
-                        vertical_alignment=ft.CrossAxisAlignment.CENTER,
-                    ),
-                    self.copy_button,
-                ],
-                expand=True,
-            ),
+        self._list_box = ft.Container(
+            content=ft.Stack([self._empty, self._list], expand=True),
+            expand=True,
+            border=ft.Border.all(1, ft.Colors.OUTLINE_VARIANT),
+            border_radius=8,
+            padding=8,
+        )
+        self._column = ft.Column(
+            [
+                self._title,
+                self._list_box,
+                ft.Row(
+                    [self._format_dropdown, self._comma_checkbox],
+                    wrap=True,
+                    vertical_alignment=ft.CrossAxisAlignment.CENTER,
+                ),
+                self.copy_button,
+            ],
             expand=True,
         )
+        self.view = ft.Container(content=self._column, expand=True)
+
+    def set_list_height(self, height: int | None) -> None:
+        """Give the tag list a fixed height (for scrolling layouts), or None to fill the space."""
+        fill = height is None
+        self.view.expand = self._column.expand = self._list_box.expand = fill
+        self._list_box.height = height
 
     def set_tags(self, tags: dict[str, float]) -> None:
         self._tags = tags

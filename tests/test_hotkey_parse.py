@@ -28,3 +28,9 @@ def test_parse_rejects_invalid(text):
 
 def test_round_trip_is_stable():
     assert str(Hotkey.parse(str(Hotkey.parse("Ctrl+Shift+J")))) == "Ctrl+Shift+J"
+
+
+def test_create_requires_a_modifier():
+    with pytest.raises(HotkeyError):
+        Hotkey.create([], "A")
+    assert str(Hotkey.create([Modifier.ALT], "f3")) == "Alt+F3"

@@ -10,12 +10,22 @@ import logging
 import os
 import sys
 
-from booruvision.hotkeys.base import Hotkey, HotkeyBackend, HotkeyCallback, HotkeyError, Modifier
+from booruvision.hotkeys.base import (
+    MODIFIER_ORDER,
+    SUPPORTED_KEYS,
+    Hotkey,
+    HotkeyBackend,
+    HotkeyCallback,
+    HotkeyError,
+    Modifier,
+)
 from booruvision.hotkeys.null import NullHotkeyBackend
 
 log = logging.getLogger(__name__)
 
 __all__ = [
+    "MODIFIER_ORDER",
+    "SUPPORTED_KEYS",
     "Hotkey",
     "HotkeyBackend",
     "HotkeyCallback",

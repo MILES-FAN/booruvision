@@ -172,3 +172,5 @@ tempCodeRunnerFile.py
 config.ini
 
 .DS_Store
+# Branded Flet client for `flet run` on macOS (see src/booruvision/devclient.py)
+.flet-client/

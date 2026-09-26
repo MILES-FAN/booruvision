@@ -1,8 +1,7 @@
 """Platform-independent hotkey model and backend interface."""
 
-import re
 from abc import ABC, abstractmethod
-from collections.abc import Callable
+from collections.abc import Callable, Iterable
 from dataclasses import dataclass
 from enum import StrEnum
 
@@ -33,15 +32,30 @@ _MODIFIER_ALIASES = {
     "super": Modifier.META,
 }
 
-_MODIFIER_ORDER = [Modifier.CTRL, Modifier.ALT, Modifier.SHIFT, Modifier.META]
+MODIFIER_ORDER = [Modifier.CTRL, Modifier.ALT, Modifier.SHIFT, Modifier.META]
 
-_FUNCTION_KEY = re.compile(r"^F([1-9]|1[0-9]|2[0-4])$")
+SUPPORTED_KEYS = (
+    [chr(c) for c in range(ord("A"), ord("Z") + 1)]
+    + [str(d) for d in range(10)]
+    + [f"F{n}" for n in range(1, 25)]
+)
+_SUPPORTED_KEYS = frozenset(SUPPORTED_KEYS)
 
 
 @dataclass(frozen=True)
 class Hotkey:
     modifiers: frozenset[Modifier]
-    key: str  # "A".."Z", "0".."9" or "F1".."F24"
+    key: str  # one of SUPPORTED_KEYS
+
+    @classmethod
+    def create(cls, modifiers: Iterable[Modifier], key: str) -> "Hotkey":
+        modifiers = frozenset(modifiers)
+        key = key.strip().upper()
+        if not modifiers:
+            raise HotkeyError("A global hotkey needs at least one modifier")
+        if key not in _SUPPORTED_KEYS:
+            raise HotkeyError(f"Unsupported key {key!r}: use A-Z, 0-9 or F1-F24")
+        return cls(modifiers, key)
 
     @classmethod
     def parse(cls, text: str) -> "Hotkey":
@@ -57,14 +71,10 @@ class Hotkey:
                 raise HotkeyError(f"Invalid hotkey {text!r}: unknown modifier {part!r}")
             modifiers.add(modifier)
 
-        key = key.upper()
-        if not ((len(key) == 1 and (key.isascii() and key.isalnum())) or _FUNCTION_KEY.match(key)):
-            raise HotkeyError(f"Invalid hotkey {text!r}: unsupported key {key!r}")
-
-        return cls(frozenset(modifiers), key)
+        return cls.create(modifiers, key)
 
     def __str__(self) -> str:
-        mods = [m.value for m in _MODIFIER_ORDER if m in self.modifiers]
+        mods = [m.value for m in MODIFIER_ORDER if m in self.modifiers]
         return "+".join([*mods, self.key])
 
 
