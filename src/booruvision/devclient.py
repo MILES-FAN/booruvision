@@ -21,6 +21,8 @@ log = logging.getLogger(__name__)
 APP_NAME = "BooruVision"
 BUNDLE_ID = "io.github.miles_fan.booruvision.dev"
 _STAMP = ".booruvision-client-stamp"
+# Bump when _build changes, so existing copies are rebuilt
+_BUILD_VERSION = 2
 
 
 def _stock_client() -> tuple[Path, str] | None:
@@ -70,10 +72,24 @@ def _build(stock: Path, target: Path, icon: Path) -> None:
 
     _make_icns(icon, contents / "Resources" / f"{Path(icon_file).stem}.icns")
 
-    # Editing the bundle invalidates its (ad-hoc) signature
+    # Editing the bundle invalidates its (ad-hoc) signature. Re-signing drops the entitlements,
+    # and plugins check them at runtime (the file picker needs files.user-selected.*), so sign
+    # the nested code first, then the app itself with the stock client's entitlements.
+    entitlements = subprocess.run(
+        ["codesign", "-d", "--entitlements", "-", "--xml", str(stock)], check=True, capture_output=True
+    ).stdout
     subprocess.run(
         ["codesign", "--force", "--deep", "--sign", "-", str(target)], check=True, capture_output=True
     )
+    if entitlements.strip():
+        with tempfile.NamedTemporaryFile(suffix=".plist") as f:
+            f.write(entitlements)
+            f.flush()
+            subprocess.run(
+                ["codesign", "--force", "--sign", "-", "--entitlements", f.name, str(target)],
+                check=True,
+                capture_output=True,
+            )
 
 
 def use_branded_client(project_root: Path, icon: Path) -> None:
@@ -89,7 +105,7 @@ def use_branded_client(project_root: Path, icon: Path) -> None:
         client_dir = project_root / ".flet-client"
         target = client_dir / f"{APP_NAME}.app"
         stamp = client_dir / _STAMP
-        expected = f"{version}\n{icon.stat().st_mtime_ns}"
+        expected = f"{_BUILD_VERSION}\n{version}\n{icon.stat().st_mtime_ns}"
         if not (target.is_dir() and stamp.is_file() and stamp.read_text() == expected):
             log.info("Creating branded Flet client in %s", client_dir)
             shutil.rmtree(client_dir, ignore_errors=True)
