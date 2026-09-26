@@ -39,8 +39,7 @@ MESSAGES = {
     # Settings bar
     "bar.model": "模型",
     "bar.threshold": "阈值：{value}",
-    "bar.shortcut": "快捷键：",
-    "bar.shortcut_tooltip": "打开设置",
+    "bar.settings": "语言与快捷键设置",
     "bar.unload": "每次分析后卸载模型",
     # Settings page
     "settings.title": "设置",

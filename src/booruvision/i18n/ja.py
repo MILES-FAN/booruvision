@@ -39,8 +39,7 @@ MESSAGES = {
     # Settings bar
     "bar.model": "モデル",
     "bar.threshold": "しきい値：{value}",
-    "bar.shortcut": "ショートカット：",
-    "bar.shortcut_tooltip": "設定を開く",
+    "bar.settings": "言語とショートカットの設定",
     "bar.unload": "解析のたびにモデルをアンロード",
     # Settings page
     "settings.title": "設定",

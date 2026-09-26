@@ -39,8 +39,7 @@ MESSAGES = {
     # Settings bar
     "bar.model": "Model",
     "bar.threshold": "Threshold: {value}",
-    "bar.shortcut": "Shortcut:",
-    "bar.shortcut_tooltip": "Open settings",
+    "bar.settings": "Language & shortcut settings",
     "bar.unload": "Unload model after every analysis",
     # Settings page
     "settings.title": "Settings",

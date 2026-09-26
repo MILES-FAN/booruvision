@@ -50,13 +50,13 @@ image again.
 
 Extra:
 - The interface is available in English, Simplified Chinese and Japanese. It follows the system
-  language by default; change it on the settings page (click `Shortcut: …` in the bottom bar)
+  language by default; change it with `Language & shortcut settings` in the bottom bar
 - `Unload model after every analysis` saves memory, but every analysis has to reload the model
 - Tag format can be `Booru` or `Stable Diffusion`, with space or `, ` as the separator
 
 ## Global shortcut
-The default shortcut is `Ctrl+Shift+I`. To change it, click `Shortcut: …` in the bottom bar to open
-the settings page, then either tick the modifiers and pick a key (A–Z, 0–9, F1–F24), or click
+The default shortcut is `Ctrl+Shift+I`. To change it, click `Language & shortcut settings` in the bottom
+bar to open the settings page, then either tick the modifiers and pick a key (A–Z, 0–9, F1–F24), or click
 `Record` and press the new combination. Click `Apply` to register it; if the combination is
 already taken, the previous shortcut is kept.
 

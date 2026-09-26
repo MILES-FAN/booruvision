@@ -83,7 +83,6 @@ class BooruVisionApp:
             models=TaggerService.available_models(),
             model=self.settings.model,
             threshold=self.settings.threshold,
-            shortcut=display_shortcut(Hotkey.parse(self.settings.shortcut)),
             unload_after=self.settings.unload_model_when_done,
             on_model_change=self.change_model,
             on_threshold_change=self.change_threshold,
@@ -435,7 +434,6 @@ class BooruVisionApp:
                 log.exception("Failed to restore previous hotkey %s", old)
         else:
             self.settings.shortcut = str(hotkey)
-            self.settings_bar.set_shortcut(display_shortcut(hotkey))
             self._save_settings()
             self._snack(t("main.shortcut_set", shortcut=display_shortcut(hotkey)))
             success = True

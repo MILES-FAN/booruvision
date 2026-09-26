@@ -1,4 +1,4 @@
-"""Model, threshold and memory settings, plus the current shortcut."""
+"""Model, threshold and memory settings, plus the button that opens the settings page."""
 
 from collections.abc import Awaitable, Callable
 
@@ -13,7 +13,6 @@ class SettingsBar:
         models: list[str],
         model: str,
         threshold: float,
-        shortcut: str,
         unload_after: bool,
         on_model_change: Callable[[str], Awaitable[None]],
         on_threshold_change: Callable[[float], None],
@@ -47,11 +46,9 @@ class SettingsBar:
         )
         # Hidden for models with per-category thresholds, which are set in the tag panel
         self._threshold_column = ft.Column([self._threshold_label, self._threshold], spacing=0, tight=True)
-        self._shortcut = ft.Text(shortcut, weight=ft.FontWeight.BOLD)
-        self._shortcut_button = ft.TextButton(
-            content=ft.Row([ft.Text(t("bar.shortcut")), self._shortcut], tight=True),
-            icon=ft.Icons.KEYBOARD,
-            tooltip=t("bar.shortcut_tooltip"),
+        self._settings_button = ft.TextButton(
+            content=t("bar.settings"),
+            icon=ft.Icons.SETTINGS,
             on_click=self._handle_open_config,
         )
         self._unload = ft.Checkbox(label=t("bar.unload"), value=unload_after, on_change=self._handle_unload)
@@ -72,7 +69,7 @@ class SettingsBar:
                             vertical_alignment=ft.CrossAxisAlignment.CENTER,
                         ),
                         ft.Row(
-                            [self._unload, self._shortcut_button],
+                            [self._unload, self._settings_button],
                             tight=True,
                             spacing=8,
                             vertical_alignment=ft.CrossAxisAlignment.CENTER,
@@ -95,9 +92,6 @@ class SettingsBar:
 
     def set_threshold_visible(self, visible: bool) -> None:
         self._threshold_column.visible = visible
-
-    def set_shortcut(self, shortcut: str) -> None:
-        self._shortcut.value = shortcut
 
     def set_hotkey_status(self, message: object | None) -> None:
         self._hotkey_status.value = str(message or "")
