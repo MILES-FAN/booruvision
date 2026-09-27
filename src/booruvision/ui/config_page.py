@@ -243,6 +243,8 @@ class ConfigPage:
             self._current = hotkey
         # On failure the app has already shown why and kept the old shortcut
         self._load_fields(self._current)
+        # page.update() was already called in this handler, so Flet skips its auto-update
+        self.page.update()
 
     def _reset(self, _) -> None:
         self._stop_recording()
